@@ -9,6 +9,7 @@
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::JoinHandle;
+use std::time::Duration;
 
 use log::warn;
 
@@ -22,7 +23,7 @@ use crate::wgc::global::Global;
 /// The thread dies when this object is dropped, and all work in submission is done.
 ///
 /// ## Example
-/// ```no_run
+/// ```ignore
 /// let token = self.poller.token(); // create a new token
 /// let callback = SubmittedWorkDoneClosure::from_rust(Box::from(move || {
 ///    drop(token); // drop token as closure has been fired
@@ -86,7 +87,7 @@ impl Poller {
                             while more_work || work.load(Ordering::Acquire) != 0 {
                                 poll_all_devices(&global, &mut more_work, true, &lock);
                             }
-                            std::thread::park(); // TODO: should we use timeout here
+                            std::thread::park_timeout(Duration::from_millis(100));
                         }
                     })
                     .expect("Spawning thread should not fail"),
