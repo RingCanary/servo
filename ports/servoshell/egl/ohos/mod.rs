@@ -378,8 +378,7 @@ impl ServoAction {
         }
     }
 
-    // todo: consider making this take `self`, so we don't need to needlessly clone.
-    fn do_action(&self, servo: &Rc<App>) {
+    fn do_action(self, servo: &Rc<App>) {
         use ServoAction::*;
         match self {
             WakeUp => {
@@ -393,18 +392,18 @@ impl ServoAction {
                 x,
                 y,
                 pointer_id,
-            } => Self::dispatch_touch_event(servo, *kind, *x, *y, *pointer_id),
-            KeyUp(k) => servo.key_up(k.clone()),
-            KeyDown(k) => servo.key_down(k.clone()),
-            InsertText(text) => servo.ime_insert_text(text.clone()),
+            } => Self::dispatch_touch_event(servo, kind, x, y, pointer_id),
+            KeyUp(k) => servo.key_up(k),
+            KeyDown(k) => servo.key_down(k),
+            InsertText(text) => servo.ime_insert_text(text),
             ImeDeleteForward(len) => {
-                for _ in 0..*len {
+                for _ in 0..len {
                     servo.key_down(Key::Named(NamedKey::Delete));
                     servo.key_up(Key::Named(NamedKey::Delete));
                 }
             },
             ImeDeleteBackward(len) => {
-                for _ in 0..*len {
+                for _ in 0..len {
                     servo.key_down(Key::Named(NamedKey::Backspace));
                     servo.key_up(Key::Named(NamedKey::Backspace));
                 }
@@ -417,11 +416,11 @@ impl ServoAction {
                 servo.notify_vsync();
             },
             Resize { width, height } => {
-                servo.resize(Rect::new(Point2D::origin(), Size2D::new(*width, *height)))
+                servo.resize(Rect::new(Point2D::origin(), Size2D::new(width, height)))
             },
             FocusWebview(arkts_id) => {
                 if let Some(native_webview_components) =
-                    NATIVE_WEBVIEWS.lock().unwrap().get(*arkts_id as usize)
+                    NATIVE_WEBVIEWS.lock().unwrap().get(arkts_id as usize)
                 {
                     let webview = servo
                         .active_or_newest_webview()
@@ -468,8 +467,8 @@ impl ServoAction {
                     .unwrap()
                     .push(NativeWebViewComponents {
                         id,
-                        xcomponent: xcomponent.clone(),
-                        window: native_window.clone(),
+                        xcomponent,
+                        window: native_window,
                     });
             },
             NewWebview(xcomponent, window) => {
@@ -485,8 +484,8 @@ impl ServoAction {
                     .unwrap()
                     .push(NativeWebViewComponents {
                         id,
-                        xcomponent: xcomponent.clone(),
-                        window: window.clone(),
+                        xcomponent,
+                        window,
                     });
                 let url = webview
                     .url()
