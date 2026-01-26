@@ -72,7 +72,10 @@ pub(crate) async fn build_html_directory_listing(
         parent_url.as_str().clone_into(&mut parent_url_string);
     }
 
-    page_html.push_str(&read_string(Resource::DirectoryListingHTML));
+    let html = tokio::task::spawn_blocking(|| read_string(Resource::DirectoryListingHTML))
+        .await
+        .expect("Failed to read directory listing HTML resource");
+    page_html.push_str(&html);
 
     page_html.push_str("<script>\n");
     page_html.push_str(&format!(
