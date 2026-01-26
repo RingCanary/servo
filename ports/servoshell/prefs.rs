@@ -145,9 +145,7 @@ pub fn default_config_dir() -> Option<PathBuf> {
 
 #[cfg(target_os = "macos")]
 pub fn default_config_dir() -> Option<PathBuf> {
-    // FIXME: use `config_dir()` ($HOME/Library/Preferences)
-    // instead of `data_dir()` ($HOME/Library/Application Support) ?
-    let mut config_dir = ::dirs::data_dir().unwrap();
+    let mut config_dir = ::dirs::config_dir().unwrap();
     config_dir.push("Servo");
     Some(config_dir)
 }

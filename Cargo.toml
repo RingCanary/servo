@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "components/xpath",
+members = ["components/xpath",
     "ports/servoshell",
     "tests/unit/*",
 ]
