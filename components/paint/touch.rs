@@ -51,13 +51,14 @@ const FLING_SCALING_FACTOR: f32 = 0.95;
 const FLING_MIN_SCREEN_PX: f32 = 3.0;
 /// Maximum velocity when flinging.
 const FLING_MAX_SCREEN_PX: f32 = 4000.0;
+/// Size of the circular buffer for touch sequences.
+const TOUCH_SEQUENCE_BUFFER_SIZE: usize = 32;
 
 pub struct TouchHandler {
     /// The [`WebViewId`] of the `WebView` this [`TouchHandler`] is associated with.
     webview_id: WebViewId,
     pub current_sequence_id: TouchSequenceId,
-    // todo: VecDeque + modulo arithmetic would be more efficient.
-    touch_sequence_map: FxHashMap<TouchSequenceId, TouchSequenceInfo>,
+    touch_sequences: Vec<Option<(TouchSequenceId, TouchSequenceInfo)>>,
     /// A set of [`InputEventId`]s for touch events that have been sent to the Constellation
     /// and have not been handled yet.
     pub(crate) pending_touch_input_events: RefCell<FxHashMap<InputEventId, PendingTouchInputEvent>>,
@@ -221,25 +222,56 @@ impl TouchHandler {
         // We insert a simulated initial touch sequence, which is already finished,
         // so that we always have one element in the map, which simplifies creating
         // a new touch sequence on touch_down.
-        let mut touch_sequence_map = FxHashMap::default();
-        touch_sequence_map.insert(TouchSequenceId::new(), finished_info);
+        let mut touch_sequences = Vec::with_capacity(TOUCH_SEQUENCE_BUFFER_SIZE);
+        for _ in 0..TOUCH_SEQUENCE_BUFFER_SIZE {
+            touch_sequences.push(None);
+        }
+        touch_sequences[0] = Some((TouchSequenceId::new(), finished_info));
+
         TouchHandler {
             webview_id,
             current_sequence_id: TouchSequenceId::new(),
-            touch_sequence_map,
+            touch_sequences,
             pending_touch_input_events: Default::default(),
             observing_frames_for_fling: Default::default(),
         }
     }
 
+    fn get_sequence_index(id: TouchSequenceId) -> usize {
+        (id.0 as usize) % TOUCH_SEQUENCE_BUFFER_SIZE
+    }
+
+    fn get_sequence_entry(&self, sequence_id: TouchSequenceId) -> Option<&TouchSequenceInfo> {
+        let idx = Self::get_sequence_index(sequence_id);
+        if let Some((id, info)) = &self.touch_sequences[idx] {
+            if *id == sequence_id {
+                return Some(info);
+            }
+        }
+        None
+    }
+
+    fn get_sequence_entry_mut(
+        &mut self,
+        sequence_id: TouchSequenceId,
+    ) -> Option<&mut TouchSequenceInfo> {
+        let idx = Self::get_sequence_index(sequence_id);
+        if let Some((id, info)) = &mut self.touch_sequences[idx] {
+            if *id == sequence_id {
+                return Some(info);
+            }
+        }
+        None
+    }
+
     pub(crate) fn set_handling_touch_move(&mut self, sequence_id: TouchSequenceId, flag: bool) {
-        if let Some(sequence) = self.touch_sequence_map.get_mut(&sequence_id) {
+        if let Some(sequence) = self.get_sequence_entry_mut(sequence_id) {
             sequence.handling_touch_move = flag;
         }
     }
 
     pub(crate) fn is_handling_touch_move(&self, sequence_id: TouchSequenceId) -> bool {
-        if let Some(sequence) = self.touch_sequence_map.get(&sequence_id) {
+        if let Some(sequence) = self.get_sequence_entry(sequence_id) {
             sequence.handling_touch_move
         } else {
             false
@@ -247,7 +279,7 @@ impl TouchHandler {
     }
 
     pub(crate) fn prevent_click(&mut self, sequence_id: TouchSequenceId) {
-        if let Some(sequence) = self.touch_sequence_map.get_mut(&sequence_id) {
+        if let Some(sequence) = self.get_sequence_entry_mut(sequence_id) {
             sequence.prevent_click = true;
         } else {
             warn!("TouchSequenceInfo corresponding to the sequence number has been deleted.");
@@ -255,7 +287,7 @@ impl TouchHandler {
     }
 
     pub(crate) fn prevent_move(&mut self, sequence_id: TouchSequenceId) {
-        if let Some(sequence) = self.touch_sequence_map.get_mut(&sequence_id) {
+        if let Some(sequence) = self.get_sequence_entry_mut(sequence_id) {
             sequence.prevent_move = TouchMoveAllowed::Prevented;
         } else {
             warn!("TouchSequenceInfo corresponding to the sequence number has been deleted.");
@@ -265,7 +297,7 @@ impl TouchHandler {
     /// Returns true if default move actions are allowed, false if prevented or the result
     /// is still pending.,
     pub(crate) fn move_allowed(&mut self, sequence_id: TouchSequenceId) -> bool {
-        if let Some(sequence) = self.touch_sequence_map.get_mut(&sequence_id) {
+        if let Some(sequence) = self.get_sequence_entry_mut(sequence_id) {
             sequence.prevent_move == TouchMoveAllowed::Allowed
         } else {
             true
@@ -276,70 +308,96 @@ impl TouchHandler {
         &mut self,
         sequence_id: TouchSequenceId,
     ) -> Vec<ScrollZoomEvent> {
-        self.touch_sequence_map
-            .get_mut(&sequence_id)
+        self.get_sequence_entry_mut(sequence_id)
             .map(|sequence| std::mem::take(&mut sequence.pending_touch_move_actions))
             .unwrap_or_default()
     }
 
     pub(crate) fn remove_pending_touch_move_actions(&mut self, sequence_id: TouchSequenceId) {
-        if let Some(sequence) = self.touch_sequence_map.get_mut(&sequence_id) {
+        if let Some(sequence) = self.get_sequence_entry_mut(sequence_id) {
             sequence.pending_touch_move_actions = Vec::new();
         }
     }
 
     // try to remove touch sequence, if touch sequence end and not has pending action.
     pub(crate) fn try_remove_touch_sequence(&mut self, sequence_id: TouchSequenceId) {
-        if let Some(sequence) = self.touch_sequence_map.get(&sequence_id) {
-            if sequence.pending_touch_move_actions.is_empty() && sequence.state == Finished {
-                self.touch_sequence_map.remove(&sequence_id);
-            }
+        let should_remove = if let Some(sequence) = self.get_sequence_entry(sequence_id) {
+            sequence.pending_touch_move_actions.is_empty() && sequence.state == Finished
+        } else {
+            false
+        };
+
+        if should_remove {
+            self.remove_touch_sequence(sequence_id);
         }
     }
 
     pub(crate) fn remove_touch_sequence(&mut self, sequence_id: TouchSequenceId) {
-        let old = self.touch_sequence_map.remove(&sequence_id);
-        debug_assert!(old.is_some(), "Sequence already removed?");
+        let idx = Self::get_sequence_index(sequence_id);
+        if let Some((id, _)) = &self.touch_sequences[idx] {
+            if *id == sequence_id {
+                self.touch_sequences[idx] = None;
+            } else {
+                warn!(
+                    "Trying to remove sequence {:?} but slot contained {:?}",
+                    sequence_id, id
+                );
+            }
+        } else {
+            debug_assert!(false, "Sequence already removed?");
+        }
     }
 
     pub fn get_current_touch_sequence_mut(&mut self) -> &mut TouchSequenceInfo {
-        self.touch_sequence_map
-            .get_mut(&self.current_sequence_id)
+        self.get_sequence_entry_mut(self.current_sequence_id)
             .expect("Current Touch sequence does not exist")
     }
 
     fn try_get_current_touch_sequence(&self) -> Option<&TouchSequenceInfo> {
-        self.touch_sequence_map.get(&self.current_sequence_id)
+        self.get_sequence_entry(self.current_sequence_id)
     }
 
     fn try_get_current_touch_sequence_mut(&mut self) -> Option<&mut TouchSequenceInfo> {
-        self.touch_sequence_map.get_mut(&self.current_sequence_id)
+        self.get_sequence_entry_mut(self.current_sequence_id)
     }
 
-    pub(crate) fn get_touch_sequence(&self, sequence_id: TouchSequenceId) -> &TouchSequenceInfo {
-        self.touch_sequence_map
-            .get(&sequence_id)
+    #[allow(dead_code)] pub(crate) fn get_touch_sequence(&self, sequence_id: TouchSequenceId) -> &TouchSequenceInfo {
+        self.get_sequence_entry(sequence_id)
             .expect("Touch sequence not found.")
     }
-    pub(crate) fn get_touch_sequence_mut(
+    #[allow(dead_code)] pub(crate) fn get_touch_sequence_mut(
         &mut self,
         sequence_id: TouchSequenceId,
     ) -> Option<&mut TouchSequenceInfo> {
-        self.touch_sequence_map.get_mut(&sequence_id)
+        self.get_sequence_entry_mut(sequence_id)
     }
 
     pub fn on_touch_down(&mut self, id: TouchId, point: Point2D<f32, DevicePixel>) {
         // if the current sequence ID does not exist in the map, then it was already handled
-        if !self
-            .touch_sequence_map
-            .contains_key(&self.current_sequence_id) ||
-            self.get_touch_sequence(self.current_sequence_id)
-                .is_finished()
-        {
+        let exists_and_finished =
+            if let Some(seq) = self.get_sequence_entry(self.current_sequence_id) {
+                seq.is_finished()
+            } else {
+                true // Not in map -> handled/finished/removed
+            };
+
+        if exists_and_finished {
             self.current_sequence_id.next();
             debug!("Entered new touch sequence: {:?}", self.current_sequence_id);
             let active_touch_points = vec![TouchPoint::new(id, point)];
-            self.touch_sequence_map.insert(
+
+            let idx = Self::get_sequence_index(self.current_sequence_id);
+            if let Some((existing_id, _)) = &self.touch_sequences[idx] {
+                if *existing_id != self.current_sequence_id {
+                    // Warning: buffer wrap happened
+                    warn!(
+                        "Overwriting old touch sequence {:?} with new {:?}",
+                        existing_id, self.current_sequence_id
+                    );
+                }
+            }
+
+            self.touch_sequences[idx] = Some((
                 self.current_sequence_id,
                 TouchSequenceInfo {
                     state: Touching,
@@ -350,7 +408,7 @@ impl TouchHandler {
                     pending_touch_move_actions: vec![],
                     hit_test_result_cache: None,
                 },
-            );
+            ));
         } else {
             debug!("Touch down in sequence {:?}.", self.current_sequence_id);
             let touch_sequence = self.get_current_touch_sequence_mut();
@@ -371,7 +429,7 @@ impl TouchHandler {
     }
 
     pub fn notify_new_frame_start(&mut self) -> Option<FlingAction> {
-        let touch_sequence = self.touch_sequence_map.get_mut(&self.current_sequence_id)?;
+        let touch_sequence = self.get_sequence_entry_mut(self.current_sequence_id)?;
 
         let Flinging {
             velocity,
@@ -628,7 +686,7 @@ impl TouchHandler {
     }
 
     pub(crate) fn get_hit_test_result_cache_value(&self) -> Option<PaintHitTestResult> {
-        let sequence = self.touch_sequence_map.get(&self.current_sequence_id)?;
+        let sequence = self.get_sequence_entry(self.current_sequence_id)?;
         if sequence.state == Finished {
             return None;
         }
@@ -643,7 +701,7 @@ impl TouchHandler {
         value: PaintHitTestResult,
         device_pixels_per_page: Scale<f32, CSSPixel, DevicePixel>,
     ) {
-        if let Some(sequence) = self.touch_sequence_map.get_mut(&self.current_sequence_id) {
+        if let Some(sequence) = self.get_sequence_entry_mut(self.current_sequence_id) {
             if sequence.hit_test_result_cache.is_none() {
                 sequence.hit_test_result_cache = Some(HitTestResultCache {
                     value,
@@ -719,5 +777,109 @@ impl RefreshDriverObserver for FlingRefreshDriverObserver {
         painter
             .webview_renderer_mut(self.webview_id)
             .is_some_and(WebViewRenderer::update_touch_handling_at_new_frame_start)
+    }
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base::id::TEST_WEBVIEW_ID;
+    use embedder_traits::TouchId;
+    use euclid::Point2D;
+
+    #[test]
+    fn test_touch_sequence_creation() {
+        let webview_id = TEST_WEBVIEW_ID;
+        let mut handler = TouchHandler::new(webview_id);
+
+        // Initial state: current sequence is 0, and it is in buffer
+        assert!(handler.get_sequence_entry(handler.current_sequence_id).is_some());
+        assert_eq!(handler.current_sequence_id.0, 0);
+
+        // Touch down starts new sequence
+        let point = Point2D::new(10.0, 10.0);
+        handler.on_touch_down(TouchId(1), point);
+
+        // Should have incremented sequence ID
+        assert_eq!(handler.current_sequence_id.0, 1);
+        assert!(handler.get_sequence_entry(handler.current_sequence_id).is_some());
+
+        let seq = handler.get_touch_sequence(handler.current_sequence_id);
+        assert!(!seq.is_finished());
+    }
+
+    #[test]
+    fn test_touch_sequence_retrieval() {
+        let webview_id = TEST_WEBVIEW_ID;
+        let mut handler = TouchHandler::new(webview_id);
+
+        let point = Point2D::new(10.0, 10.0);
+        handler.on_touch_down(TouchId(1), point);
+
+        let id = handler.current_sequence_id;
+        let seq = handler.get_touch_sequence(id);
+        assert_eq!(seq.active_touch_points.len(), 1);
+        assert_eq!(seq.active_touch_points[0].id, TouchId(1));
+    }
+
+    #[test]
+    fn test_touch_sequence_removal() {
+        let webview_id = TEST_WEBVIEW_ID;
+        let mut handler = TouchHandler::new(webview_id);
+
+        let point = Point2D::new(10.0, 10.0);
+        handler.on_touch_down(TouchId(1), point);
+        let id = handler.current_sequence_id;
+
+        handler.on_touch_up(TouchId(1), point);
+
+        handler.remove_touch_sequence(id);
+        assert!(handler.get_sequence_entry(id).is_none());
+    }
+
+    #[test]
+    fn test_buffer_wrapping() {
+        let webview_id = TEST_WEBVIEW_ID;
+        let mut handler = TouchHandler::new(webview_id);
+
+        let size = super::TOUCH_SEQUENCE_BUFFER_SIZE;
+
+        for _ in 1..=size {
+             let point = Point2D::new(10.0, 10.0);
+             handler.on_touch_down(TouchId(1), point);
+             handler.on_touch_up(TouchId(1), point);
+
+             // Force state to Finished so next sequence can start
+             let id = handler.current_sequence_id;
+             if let Some(seq) = handler.get_touch_sequence_mut(id) {
+                 seq.state = super::TouchSequenceState::Finished;
+             }
+        }
+
+        assert_eq!(handler.current_sequence_id.0 as usize, size);
+
+        // Next one should wrap to index 0 (which was id=0) and overwrite id=0.
+        // Wait, id=32 maps to index 0 (32%32=0).
+        // id=0 is at index 0.
+        // So loop i=32 overwrote id=0 with id=32.
+
+        // Next call creates id=33.
+        // id=33 maps to index 1 (33%32=1).
+        // id=1 is at index 1.
+        // So it overwrites id=1.
+
+        let point = Point2D::new(10.0, 10.0);
+        handler.on_touch_down(TouchId(1), point);
+
+        assert_eq!(handler.current_sequence_id.0 as usize, size + 1);
+
+        let idx = super::TouchHandler::get_sequence_index(handler.current_sequence_id);
+        assert_eq!(idx, (size + 1) % size);
+
+        // Check if entry exists
+        let seq_info = handler.get_sequence_entry(handler.current_sequence_id);
+        assert!(seq_info.is_some());
     }
 }
