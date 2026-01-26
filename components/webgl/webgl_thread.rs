@@ -337,17 +337,28 @@ impl WebGLThread {
 
                         // FIXME(nox): Should probably be done by surfman.
                         if api_type != GlType::Gles {
-                            // Points sprites are enabled by default in OpenGL 3.2 core
-                            // and in GLES. Rather than doing version detection, it does
-                            // not hurt to enable them anyways.
-
                             unsafe {
-                                // XXX: Do we even need to this?
-                                const GL_POINT_SPRITE: u32 = 0x8861;
-                                data.gl.enable(GL_POINT_SPRITE);
-                                let err = data.gl.get_error();
-                                if err != 0 {
-                                    warn!("Error enabling GL point sprites: {}", err);
+                                // XXX: Do we even need to do this?
+                                // Point sprites are removed in Core Profile 3.2+.
+                                // We check version and profile to avoid errors.
+                                let version = &data.state._gl_version;
+                                let is_core_profile_3_2 =
+                                    if version.major > 3 || (version.major == 3 && version.minor >= 2) {
+                                        // GL_CONTEXT_PROFILE_MASK = 0x9126
+                                        let mask = data.gl.get_parameter_i32(0x9126);
+                                        // GL_CONTEXT_CORE_PROFILE_BIT = 0x00000001
+                                        (mask as u32 & 0x1) != 0
+                                    } else {
+                                        false
+                                    };
+
+                                if !is_core_profile_3_2 {
+                                    const GL_POINT_SPRITE: u32 = 0x8861;
+                                    data.gl.enable(GL_POINT_SPRITE);
+                                    let err = data.gl.get_error();
+                                    if err != 0 {
+                                        warn!("Error enabling GL point sprites: {}", err);
+                                    }
                                 }
 
                                 data.gl.enable(gl::PROGRAM_POINT_SIZE);
