@@ -11,7 +11,8 @@ create table database (
     name    varchar          not null
         primary key,
     origin  varchar          not null,
-    version bigint default 0 not null
+    version bigint default 0 not null,
+    last_vacuum_time bigint default 0 not null
 ) WITHOUT ROWID;"#;
     conn.execute(DATABASE, [])?;
 
