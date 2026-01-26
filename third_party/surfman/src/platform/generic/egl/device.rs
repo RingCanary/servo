@@ -29,7 +29,11 @@ static EGL_LIBRARY: LazyLock<EGLLibraryWrapper> = LazyLock::new(|| unsafe {
 static EGL_POTENTIAL_SO_NAMES: [&CStr; 1] = [c"libEGL.so"];
 
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_env = "ohos")))]
-static EGL_POTENTIAL_SO_NAMES: [&CStr; 2] = [c"libEGL.so.1", c"libEGL.so"];
+static EGL_POTENTIAL_SO_NAMES: [&CStr; 3] = [
+    c"libEGL.so.1",
+    c"libEGL.so",
+    c"libGLdispatch.so.0",
+];
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 static EGL_LIBRARY: LazyLock<EGLLibraryWrapper> = LazyLock::new(|| {
