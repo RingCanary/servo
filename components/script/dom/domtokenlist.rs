@@ -130,27 +130,34 @@ impl DOMTokenListMethods<crate::DomTypeHolder> for DOMTokenList {
     /// <https://dom.spec.whatwg.org/#dom-domtokenlist-add>
     fn Add(&self, tokens: Vec<DOMString>, can_gc: CanGc) -> ErrorResult {
         let mut atoms = self.element.get_tokenlist_attribute(&self.local_name);
+        let mut changed = false;
         for token in &tokens {
             let token = self.check_token_exceptions(token)?;
             if !atoms.contains(&token) {
                 atoms.push(token);
+                changed = true;
             }
         }
-        self.perform_update_steps(atoms, can_gc);
+        if changed {
+            self.perform_update_steps(atoms, can_gc);
+        }
         Ok(())
     }
 
     /// <https://dom.spec.whatwg.org/#dom-domtokenlist-remove>
     fn Remove(&self, tokens: Vec<DOMString>, can_gc: CanGc) -> ErrorResult {
         let mut atoms = self.element.get_tokenlist_attribute(&self.local_name);
+        let mut changed = false;
         for token in &tokens {
             let token = self.check_token_exceptions(token)?;
-            atoms
-                .iter()
-                .position(|atom| *atom == token)
-                .map(|index| atoms.remove(index));
+            if let Some(index) = atoms.iter().position(|atom| *atom == token) {
+                atoms.remove(index);
+                changed = true;
+            }
         }
-        self.perform_update_steps(atoms, can_gc);
+        if changed {
+            self.perform_update_steps(atoms, can_gc);
+        }
         Ok(())
     }
 
@@ -205,6 +212,7 @@ impl DOMTokenListMethods<crate::DomTypeHolder> for DOMTokenList {
         let mut atoms = self.element.get_tokenlist_attribute(&self.local_name);
         let mut result = false;
         if let Some(pos) = atoms.iter().position(|atom| *atom == token) {
+            let mut changed = false;
             match atoms.iter().position(|atom| *atom == new_token) {
                 Some(redundant_pos) if redundant_pos > pos => {
                     // The replacement is already in the list, later,
@@ -212,12 +220,14 @@ impl DOMTokenListMethods<crate::DomTypeHolder> for DOMTokenList {
                     // later copy.
                     atoms[pos] = new_token;
                     atoms.remove(redundant_pos);
+                    changed = true;
                 },
                 Some(redundant_pos) if redundant_pos < pos => {
                     // The replacement is already in the list, earlier,
                     // so we remove the index where we'd be putting the
                     // later copy.
                     atoms.remove(pos);
+                    changed = true;
                 },
                 Some(_) => {
                     // Else we are replacing the token with itself, nothing to change
@@ -225,11 +235,14 @@ impl DOMTokenListMethods<crate::DomTypeHolder> for DOMTokenList {
                 None => {
                     // The replacement is not in the list already
                     atoms[pos] = new_token;
+                    changed = true;
                 },
             }
 
             // Step 5.
-            self.perform_update_steps(atoms, can_gc);
+            if changed {
+                self.perform_update_steps(atoms, can_gc);
+            }
             result = true;
         }
         Ok(result)
