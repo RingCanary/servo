@@ -1521,6 +1521,7 @@ dependencies = [
  "media",
  "net",
  "net_traits",
+ "nix",
  "paint_api",
  "parking_lot",
  "profile",

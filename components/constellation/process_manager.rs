@@ -6,6 +6,12 @@ use std::process::Child;
 
 use crossbeam_channel::{Receiver, Select};
 use log::{debug, warn};
+#[cfg(unix)]
+use nix::errno::Errno;
+#[cfg(unix)]
+use nix::sys::wait::waitpid;
+#[cfg(unix)]
+use nix::unistd::Pid;
 use profile_traits::mem::{ProfilerChan, ProfilerMsg};
 
 pub enum Process {
@@ -26,9 +32,32 @@ impl Process {
             Self::Unsandboxed(child) => {
                 let _ = child.wait();
             },
-            Self::Sandboxed(_pid) => {
-                // TODO: use nix::waitpid() on supported platforms.
-                warn!("wait() is not yet implemented for sandboxed processes.");
+            Self::Sandboxed(pid) => {
+                #[cfg(unix)]
+                {
+                    let pid = Pid::from_raw(*pid as i32);
+                    loop {
+                        match waitpid(pid, None) {
+                            Ok(_) => {
+                                debug!("Sandboxed process {} waited successfully", pid);
+                                break;
+                            },
+                            Err(Errno::EINTR) => continue,
+                            Err(e) => {
+                                warn!("Failed to wait for sandboxed process {}: {}", pid, e);
+                                break;
+                            },
+                        }
+                    }
+                }
+                #[cfg(not(unix))]
+                {
+                    // TODO: use nix::waitpid() on supported platforms.
+                    warn!(
+                        "wait() is not yet implemented for sandboxed processes (pid={}).",
+                        pid
+                    );
+                }
             },
         }
     }
