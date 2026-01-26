@@ -1,0 +1,21 @@
+============================================================
+SERVO BENCHMARK REPORT
+============================================================
+
+METADATA
+----------------------------------------
+Benchmark Suite: Servo RPi5 Headless Benchmark
+Branch: bench/rpi5-tests
+Build Type: Dev (optimized, faster build time)
+Mode: Headless
+Timestamp: 2026-01-26T14:23:59.837933
+
+Platform: ARM Cortex-A76 (quad-core)
+Architecture: aarch64-unknown-linux-gnu
+RAM: 8 GB LPDDR4-3200
+GPU: Broadcom VideoCore 3D (V3D 7.1.7.0)
+
+STATUS: FAILED
+Message: No successful benchmarks
+
+============================================================

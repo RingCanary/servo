@@ -746,6 +746,66 @@ git commit -m "feat: add new feature"
 # (connect to http://localhost:4444 with Selenium/other client)
 ```
 
+### Screenshot Testing & zai-mcp-server Integration
+
+**Directory Structure**:
+- Screenshots stored in: `/mnt/nvme/Pictures/`
+- Categories: `basic-layout/`, `css-features/`, `webgl/`, `popular-websites/`, `wpt-tests/`
+
+**Setup Screenshot Directories**:
+```bash
+mkdir -p /mnt/nvme/Pictures/{basic-layout,css-features,webgl,popular-websites,wpt-tests}
+```
+
+**Capturing Screenshots**:
+```bash
+# Headless capture with software rendering (recommended for headless mode)
+./mach run --headless --software --output <path>/screenshot.png <URL>
+
+# Examples:
+./mach run --headless --software --output /mnt/nvme/Pictures/basic-layout/hello.png tests/html/hello.html
+
+./mach run --headless --software --output /mnt/nvme/Pictures/css-features/demo.png tests/html/demo.html
+
+./mach run --headless --software --output /mnt/nvme/Pictures/popular-websites/servo-org.png https://servo.org
+
+./mach run --headless --software --output /mnt/nvme/Pictures/popular-websites/example-com.png https://example.com
+
+./mach run --headless --software --output /mnt/nvme/Pictures/wpt-tests/test.png tests/wpt/tests/css/css-box/test_box_display.html
+```
+
+**Analyzing with zai-mcp-server**:
+```bash
+# Analyze rendering quality and layout
+zai-mcp-server_analyze_image \
+  --image_source /mnt/nvme/Pictures/basic-layout/hello.png \
+  --prompt "Evaluate rendering quality, layout correctness, text clarity, and any visual artifacts"
+
+# Extract text from screenshots
+zai-mcp-server_extract_text_from_screenshot \
+  --image_source /mnt/nvme/Pictures/basic-layout/hello.png \
+  --prompt "Extract all visible text"
+
+# Compare screenshots (if needed)
+zai-mcp-server_ui_diff_check \
+  --expected_image_source /path/to/reference.png \
+  --actual_image_source /mnt/nvme/Pictures/basic-layout/hello.png \
+  --prompt "Compare rendering with expected output"
+```
+
+**Test Pages Available**:
+- **Local tests**: 100+ pages in `tests/html/` (acid tests, CSS demos, WebGL, etc.)
+- **WPT tests**: 285+ directories in `tests/wpt/tests/` (CSS, DOM, webgl, etc.)
+- **Popular websites**: servo.org, example.com, wikipedia.org, github.com, etc.
+
+**Testing Tips**:
+- Use `--software` flag for headless mode to avoid GPU context issues
+- Headless mode may require `LIBGL_ALWAYS_SOFTWARE=1` environment variable
+- Screenshot files are PNG format (1024x740 by default)
+- Servo processes in headless mode run until killed (`kill -9` or `pkill -9 servo`)
+- Allow 30-60 seconds for page load and screenshot capture
+- WPT tests may require host mappings from `tests/wpt/hosts` file
+
 ### Raspberry Pi 5 Optimization Checklist
 
 - [ ] Use NVMe SSD for build artifacts (`/mnt/nvme/servo`)

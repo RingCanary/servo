@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "benchmark_suite": "Servo RPi5 Headless Benchmark",
+    "branch": "bench/rpi5-tests",
+    "build_type": "Dev (optimized, faster build time)",
+    "mode": "Headless",
+    "platform": {
+      "cpu": "ARM Cortex-A76 (quad-core)",
+      "architecture": "aarch64-unknown-linux-gnu",
+      "cpu_clock": "1.5 GHz base, up to 2.4 GHz turbo",
+      "ram": "8 GB LPDDR4-3200",
+      "gpu": "Broadcom VideoCore 3D (V3D 7.1.7.0)",
+      "storage": "NVMe SSD"
+    },
+    "timestamp": "2026-01-26T14:23:59.837933",
+    "python_version": "3.11.14",
+    "servo_version": "dev (commit 2086db50d48 - EGL DEFAULT DISPLAY fallback)"
+  },
+  "results": {
+    "status": "FAILED",
+    "message": "No successful benchmarks",
+    "total_runs": 2,
+    "successful_runs": 0,
+    "failed_runs": 2,
+    "results": []
+  }
+}
