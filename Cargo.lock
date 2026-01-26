@@ -10343,6 +10343,7 @@ dependencies = [
  "parking_lot",
  "pixels",
  "rustc-hash 2.1.1",
+ "smallvec",
  "surfman",
  "webrender",
  "webrender_api",

@@ -36,6 +36,7 @@ use glow::{
 use half::f16;
 use itertools::Itertools;
 use log::{debug, error, trace, warn};
+use smallvec::SmallVec;
 use paint_api::{
     CrossProcessPaintApi, PainterSurfmanDetailsMap, SerializableImageData,
     WebRenderExternalImageIdManager, WebRenderImageHandlerType,
@@ -1365,11 +1366,12 @@ impl WebGLImpl {
                 sender.send((size, tftype, name)).unwrap();
             },
             WebGLCommand::TransformFeedbackVaryings(program, ref varyings, buffer_mode) => {
-                let varyings: Vec<String> = varyings
+                let varyings: SmallVec<[String; 16]> = varyings
                     .iter()
                     .map(|varying| to_name_in_compiled_shader(varying))
                     .collect();
-                let varyings_refs: Vec<&str> = varyings.iter().map(String::as_ref).collect();
+                let varyings_refs: SmallVec<[&str; 16]> =
+                    varyings.iter().map(String::as_ref).collect();
                 unsafe {
                     gl.transform_feedback_varyings(
                         program.glow(),
