@@ -338,16 +338,18 @@ impl WebGLThread {
                         // FIXME(nox): Should probably be done by surfman.
                         if api_type != GlType::Gles {
                             // Points sprites are enabled by default in OpenGL 3.2 core
-                            // and in GLES. Rather than doing version detection, it does
-                            // not hurt to enable them anyways.
+                            // and in GLES. GL_POINT_SPRITE was removed in OpenGL 3.2 core
+                            // and causes an error if enabled.
 
                             unsafe {
-                                // XXX: Do we even need to this?
-                                const GL_POINT_SPRITE: u32 = 0x8861;
-                                data.gl.enable(GL_POINT_SPRITE);
-                                let err = data.gl.get_error();
-                                if err != 0 {
-                                    warn!("Error enabling GL point sprites: {}", err);
+                                let version = data.gl.version();
+                                if version.major < 3 || (version.major == 3 && version.minor < 2) {
+                                    const GL_POINT_SPRITE: u32 = 0x8861;
+                                    data.gl.enable(GL_POINT_SPRITE);
+                                    let err = data.gl.get_error();
+                                    if err != 0 {
+                                        warn!("Error enabling GL point sprites: {}", err);
+                                    }
                                 }
 
                                 data.gl.enable(gl::PROGRAM_POINT_SIZE);
