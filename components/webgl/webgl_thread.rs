@@ -2871,9 +2871,8 @@ fn prepare_pixels(
             pixel_format,
             internal_format,
             data_type,
-            pixels.into_owned(),
-        )
-        .into();
+            pixels,
+        );
     }
 
     if y_axis_treatment == YAxisTreatment::Flipped {
@@ -2898,13 +2897,13 @@ fn image_to_tex_image_data(
     pixel_format: PixelFormat,
     format: TexFormat,
     data_type: TexDataType,
-    mut pixels: Vec<u8>,
-) -> Vec<u8> {
+    mut pixels: Cow<[u8]>,
+) -> Cow<[u8]> {
     // hint for vector allocation sizing.
     let pixel_count = pixels.len() / 4;
 
     match pixel_format {
-        PixelFormat::BGRA8 => pixels::rgba8_byte_swap_colors_inplace(&mut pixels),
+        PixelFormat::BGRA8 => pixels::rgba8_byte_swap_colors_inplace(pixels.to_mut()),
         PixelFormat::RGBA8 => {},
         _ => unimplemented!("unsupported pixel format ({:?})", pixel_format),
     }
@@ -2914,83 +2913,104 @@ fn image_to_tex_image_data(
         (TexFormat::RGBA8, TexDataType::UnsignedByte) => pixels,
         (TexFormat::RGB, TexDataType::UnsignedByte) |
         (TexFormat::RGB8, TexDataType::UnsignedByte) => {
-            for i in 0..pixel_count {
-                let rgb = {
-                    let rgb = &pixels[i * 4..i * 4 + 3];
-                    [rgb[0], rgb[1], rgb[2]]
-                };
-                pixels[i * 3..i * 3 + 3].copy_from_slice(&rgb);
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let rgb = {
+                        let rgb = &pixels_mut[i * 4..i * 4 + 3];
+                        [rgb[0], rgb[1], rgb[2]]
+                    };
+                    pixels_mut[i * 3..i * 3 + 3].copy_from_slice(&rgb);
+                }
+                pixels_mut.truncate(pixel_count * 3);
             }
-            pixels.truncate(pixel_count * 3);
             pixels
         },
         (TexFormat::Alpha, TexDataType::UnsignedByte) => {
-            for i in 0..pixel_count {
-                let p = pixels[i * 4 + 3];
-                pixels[i] = p;
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let p = pixels_mut[i * 4 + 3];
+                    pixels_mut[i] = p;
+                }
+                pixels_mut.truncate(pixel_count);
             }
-            pixels.truncate(pixel_count);
             pixels
         },
         (TexFormat::Luminance, TexDataType::UnsignedByte) => {
-            for i in 0..pixel_count {
-                let p = pixels[i * 4];
-                pixels[i] = p;
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let p = pixels_mut[i * 4];
+                    pixels_mut[i] = p;
+                }
+                pixels_mut.truncate(pixel_count);
             }
-            pixels.truncate(pixel_count);
             pixels
         },
         (TexFormat::LuminanceAlpha, TexDataType::UnsignedByte) => {
-            for i in 0..pixel_count {
-                let (lum, a) = {
-                    let rgba = &pixels[i * 4..i * 4 + 4];
-                    (rgba[0], rgba[3])
-                };
-                pixels[i * 2] = lum;
-                pixels[i * 2 + 1] = a;
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let (lum, a) = {
+                        let rgba = &pixels_mut[i * 4..i * 4 + 4];
+                        (rgba[0], rgba[3])
+                    };
+                    pixels_mut[i * 2] = lum;
+                    pixels_mut[i * 2 + 1] = a;
+                }
+                pixels_mut.truncate(pixel_count * 2);
             }
-            pixels.truncate(pixel_count * 2);
             pixels
         },
         (TexFormat::RGBA, TexDataType::UnsignedShort4444) => {
-            for i in 0..pixel_count {
-                let p = {
-                    let rgba = &pixels[i * 4..i * 4 + 4];
-                    ((rgba[0] as u16 & 0xf0) << 8) |
-                        ((rgba[1] as u16 & 0xf0) << 4) |
-                        (rgba[2] as u16 & 0xf0) |
-                        ((rgba[3] as u16 & 0xf0) >> 4)
-                };
-                NativeEndian::write_u16(&mut pixels[i * 2..i * 2 + 2], p);
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let p = {
+                        let rgba = &pixels_mut[i * 4..i * 4 + 4];
+                        ((rgba[0] as u16 & 0xf0) << 8) |
+                            ((rgba[1] as u16 & 0xf0) << 4) |
+                            (rgba[2] as u16 & 0xf0) |
+                            ((rgba[3] as u16 & 0xf0) >> 4)
+                    };
+                    NativeEndian::write_u16(&mut pixels_mut[i * 2..i * 2 + 2], p);
+                }
+                pixels_mut.truncate(pixel_count * 2);
             }
-            pixels.truncate(pixel_count * 2);
             pixels
         },
         (TexFormat::RGBA, TexDataType::UnsignedShort5551) => {
-            for i in 0..pixel_count {
-                let p = {
-                    let rgba = &pixels[i * 4..i * 4 + 4];
-                    ((rgba[0] as u16 & 0xf8) << 8) |
-                        ((rgba[1] as u16 & 0xf8) << 3) |
-                        ((rgba[2] as u16 & 0xf8) >> 2) |
-                        ((rgba[3] as u16) >> 7)
-                };
-                NativeEndian::write_u16(&mut pixels[i * 2..i * 2 + 2], p);
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let p = {
+                        let rgba = &pixels_mut[i * 4..i * 4 + 4];
+                        ((rgba[0] as u16 & 0xf8) << 8) |
+                            ((rgba[1] as u16 & 0xf8) << 3) |
+                            ((rgba[2] as u16 & 0xf8) >> 2) |
+                            ((rgba[3] as u16) >> 7)
+                    };
+                    NativeEndian::write_u16(&mut pixels_mut[i * 2..i * 2 + 2], p);
+                }
+                pixels_mut.truncate(pixel_count * 2);
             }
-            pixels.truncate(pixel_count * 2);
             pixels
         },
         (TexFormat::RGB, TexDataType::UnsignedShort565) => {
-            for i in 0..pixel_count {
-                let p = {
-                    let rgb = &pixels[i * 4..i * 4 + 3];
-                    ((rgb[0] as u16 & 0xf8) << 8) |
-                        ((rgb[1] as u16 & 0xfc) << 3) |
-                        ((rgb[2] as u16 & 0xf8) >> 3)
-                };
-                NativeEndian::write_u16(&mut pixels[i * 2..i * 2 + 2], p);
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let p = {
+                        let rgb = &pixels_mut[i * 4..i * 4 + 3];
+                        ((rgb[0] as u16 & 0xf8) << 8) |
+                            ((rgb[1] as u16 & 0xfc) << 3) |
+                            ((rgb[2] as u16 & 0xf8) >> 3)
+                    };
+                    NativeEndian::write_u16(&mut pixels_mut[i * 2..i * 2 + 2], p);
+                }
+                pixels_mut.truncate(pixel_count * 2);
             }
-            pixels.truncate(pixel_count * 2);
             pixels
         },
         (TexFormat::RGBA, TexDataType::Float) | (TexFormat::RGBA32f, TexDataType::Float) => {
@@ -3001,7 +3021,7 @@ fn image_to_tex_image_data(
                 rgbaf32.write_f32::<NativeEndian>(rgba8[2] as f32).unwrap();
                 rgbaf32.write_f32::<NativeEndian>(rgba8[3] as f32).unwrap();
             }
-            rgbaf32
+            Cow::Owned(rgbaf32)
         },
 
         (TexFormat::RGB, TexDataType::Float) | (TexFormat::RGB32f, TexDataType::Float) => {
@@ -3011,11 +3031,11 @@ fn image_to_tex_image_data(
                 rgbf32.write_f32::<NativeEndian>(rgba8[1] as f32).unwrap();
                 rgbf32.write_f32::<NativeEndian>(rgba8[2] as f32).unwrap();
             }
-            rgbf32
+            Cow::Owned(rgbf32)
         },
 
         (TexFormat::Alpha, TexDataType::Float) | (TexFormat::Alpha32f, TexDataType::Float) => {
-            for rgba8 in pixels.chunks_mut(4) {
+            for rgba8 in pixels.to_mut().chunks_mut(4) {
                 let p = rgba8[3] as f32;
                 NativeEndian::write_f32(rgba8, p);
             }
@@ -3024,7 +3044,7 @@ fn image_to_tex_image_data(
 
         (TexFormat::Luminance, TexDataType::Float) |
         (TexFormat::Luminance32f, TexDataType::Float) => {
-            for rgba8 in pixels.chunks_mut(4) {
+            for rgba8 in pixels.to_mut().chunks_mut(4) {
                 let p = rgba8[0] as f32;
                 NativeEndian::write_f32(rgba8, p);
             }
@@ -3038,7 +3058,7 @@ fn image_to_tex_image_data(
                 data.write_f32::<NativeEndian>(rgba8[0] as f32).unwrap();
                 data.write_f32::<NativeEndian>(rgba8[3] as f32).unwrap();
             }
-            data
+            Cow::Owned(data)
         },
 
         (TexFormat::RGBA, TexDataType::HalfFloat) |
@@ -3058,7 +3078,7 @@ fn image_to_tex_image_data(
                     .write_u16::<NativeEndian>(f16::from_f32(rgba8[3] as f32).to_bits())
                     .unwrap();
             }
-            rgbaf16
+            Cow::Owned(rgbaf16)
         },
 
         (TexFormat::RGB, TexDataType::HalfFloat) | (TexFormat::RGB16f, TexDataType::HalfFloat) => {
@@ -3074,29 +3094,35 @@ fn image_to_tex_image_data(
                     .write_u16::<NativeEndian>(f16::from_f32(rgba8[2] as f32).to_bits())
                     .unwrap();
             }
-            rgbf16
+            Cow::Owned(rgbf16)
         },
         (TexFormat::Alpha, TexDataType::HalfFloat) |
         (TexFormat::Alpha16f, TexDataType::HalfFloat) => {
-            for i in 0..pixel_count {
-                let p = f16::from_f32(pixels[i * 4 + 3] as f32).to_bits();
-                NativeEndian::write_u16(&mut pixels[i * 2..i * 2 + 2], p);
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let p = f16::from_f32(pixels_mut[i * 4 + 3] as f32).to_bits();
+                    NativeEndian::write_u16(&mut pixels_mut[i * 2..i * 2 + 2], p);
+                }
+                pixels_mut.truncate(pixel_count * 2);
             }
-            pixels.truncate(pixel_count * 2);
             pixels
         },
         (TexFormat::Luminance, TexDataType::HalfFloat) |
         (TexFormat::Luminance16f, TexDataType::HalfFloat) => {
-            for i in 0..pixel_count {
-                let p = f16::from_f32(pixels[i * 4] as f32).to_bits();
-                NativeEndian::write_u16(&mut pixels[i * 2..i * 2 + 2], p);
+            {
+                let pixels_mut = pixels.to_mut();
+                for i in 0..pixel_count {
+                    let p = f16::from_f32(pixels_mut[i * 4] as f32).to_bits();
+                    NativeEndian::write_u16(&mut pixels_mut[i * 2..i * 2 + 2], p);
+                }
+                pixels_mut.truncate(pixel_count * 2);
             }
-            pixels.truncate(pixel_count * 2);
             pixels
         },
         (TexFormat::LuminanceAlpha, TexDataType::HalfFloat) |
         (TexFormat::LuminanceAlpha16f, TexDataType::HalfFloat) => {
-            for rgba8 in pixels.chunks_mut(4) {
+            for rgba8 in pixels.to_mut().chunks_mut(4) {
                 let lum = f16::from_f32(rgba8[0] as f32).to_bits();
                 let a = f16::from_f32(rgba8[3] as f32).to_bits();
                 NativeEndian::write_u16(&mut rgba8[0..2], lum);
