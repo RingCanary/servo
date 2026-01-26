@@ -390,15 +390,39 @@ impl KvsEngine for SqliteEngine {
         let path = self.db_path.clone();
         spawning_pool.spawn(move || {
             let connection = Connection::open(path).unwrap();
+            let mut get_store_stmt = connection.prepare("SELECT * FROM object_store WHERE name = ?");
+            let mut store_cache: std::collections::HashMap<
+                String,
+                Option<object_store_model::Model>,
+            > = std::collections::HashMap::new();
+
             for request in transaction.requests {
-                let object_store = connection
-                    .prepare("SELECT * FROM object_store WHERE name = ?")
-                    .and_then(|mut stmt| {
-                        stmt.query_row(params![request.store_name.to_string()], |row| {
-                            object_store_model::Model::try_from(row)
-                        })
-                        .optional()
-                    });
+                let object_store = match get_store_stmt {
+                    Ok(ref mut stmt) => {
+                        if let Some(cached) = store_cache.get(&request.store_name) {
+                            Ok(cached.clone())
+                        } else {
+                            let res = stmt
+                                .query_row(params![request.store_name], |row| {
+                                    object_store_model::Model::try_from(row)
+                                })
+                                .optional();
+                            if let Ok(ref opt_model) = res {
+                                store_cache.insert(request.store_name.clone(), opt_model.clone());
+                            }
+                            res
+                        }
+                    },
+                    Err(_) => connection
+                        .prepare("SELECT * FROM object_store WHERE name = ?")
+                        .and_then(|mut stmt| {
+                            stmt.query_row(params![request.store_name.to_string()], |row| {
+                                object_store_model::Model::try_from(row)
+                            })
+                            .optional()
+                        }),
+                };
+
                 fn process_object_store<T: Send + Serialize + for<'de> Deserialize<'de>>(
                     object_store: Result<Option<object_store_model::Model>, Error>,
                     callback: &GenericCallback<BackendResult<T>>,
