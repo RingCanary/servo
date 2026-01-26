@@ -330,7 +330,15 @@ unsafe fn create_egl_display(display: *mut Display) -> EGLDisplay {
             egl_display = egl.GetDisplay(display as *mut c_void);
         }
 
-        assert_ne!(egl_display, egl::NO_DISPLAY);
+        // Fallback to eglGetDisplay(EGL_DEFAULT_DISPLAY) if needed.
+        if egl_display == egl::NO_DISPLAY && egl.GetDisplay.is_loaded() {
+            egl_display = egl.GetDisplay(egl::DEFAULT_DISPLAY as *mut c_void);
+        }
+
+        if egl_display == egl::NO_DISPLAY {
+            let err = egl.GetError();
+            panic!("Failed to create EGL display. Last error: 0x{:x}", err);
+        }
 
         let (mut egl_major_version, mut egl_minor_version) = (0, 0);
         let ok = egl.Initialize(egl_display, &mut egl_major_version, &mut egl_minor_version);
