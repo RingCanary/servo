@@ -403,6 +403,25 @@ impl BluetoothDevice {
         get_inner_and_call!(self, BluetoothDevice, disconnect)
     }
 
+    pub fn exchange_mtu(&self, mtu: u16) -> Result<u16, Box<dyn Error>> {
+        match self {
+            #[cfg(all(target_os = "linux", feature = "native-bluetooth"))]
+            BluetoothDevice::Bluez(_) => Ok(mtu),
+            #[cfg(all(target_os = "android", feature = "native-bluetooth"))]
+            BluetoothDevice::Android(_) => Ok(mtu),
+            #[cfg(all(target_os = "macos", feature = "native-bluetooth"))]
+            BluetoothDevice::Mac(mac_device) => mac_device.exchange_mtu(mtu),
+            #[cfg(not(any(
+                all(target_os = "linux", feature = "native-bluetooth"),
+                all(target_os = "android", feature = "native-bluetooth"),
+                all(target_os = "macos", feature = "native-bluetooth")
+            )))]
+            BluetoothDevice::Empty(_) => Ok(mtu),
+            #[cfg(feature = "bluetooth-test")]
+            BluetoothDevice::Mock(_) => Ok(mtu),
+        }
+    }
+
     pub fn connect_profile(&self, uuid: String) -> Result<(), Box<dyn Error>> {
         get_inner_and_call!(self, BluetoothDevice, connect_profile, uuid)
     }

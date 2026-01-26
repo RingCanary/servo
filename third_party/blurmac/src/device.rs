@@ -166,6 +166,24 @@ impl BluetoothDevice {
         Ok(v)
     }
 
+    pub fn exchange_mtu(&self, mtu: u16) -> Result<u16, Box<dyn Error>> {
+        trace!("BluetoothDevice::exchange_mtu");
+        if self.peripheral == nil {
+            return Err(Box::from(NO_PERIPHERAL_FOUND));
+        }
+
+        // macOS handles MTU exchange automatically.
+        // We calculate the MTU from maximumWriteValueLengthForType:1 (WriteWithoutResponse) + 3.
+        let max_len = cb::peripheral_maximumwritevaluelengthfortype(self.peripheral, 1);
+        let negotiated_mtu = (max_len + 3) as u16;
+
+        debug!(
+            "BluetoothDevice::exchange_mtu: requested {}, actual {}",
+            mtu, negotiated_mtu
+        );
+        Ok(negotiated_mtu)
+    }
+
     // Not supported
 
     pub fn get_rssi(&self) -> Result<i16, Box<dyn Error>> {
