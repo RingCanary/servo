@@ -672,6 +672,8 @@ impl BluetoothManager {
                 let _ = d.connect();
                 for _ in 0..MAXIMUM_TRANSACTION_TIME {
                     if d.is_connected().unwrap_or(false) {
+                        // Step 5.1.4: Use the exchange MTU procedure.
+                        let _ = d.exchange_mtu(512);
                         return Ok(BluetoothResponse::GATTServerConnect(true));
                     } else {
                         if is_mock_adapter(&adapter) {
@@ -679,7 +681,6 @@ impl BluetoothManager {
                         }
                         thread::sleep(Duration::from_millis(CONNECTION_TIMEOUT_MS));
                     }
-                    // TODO: Step 5.1.4: Use the exchange MTU procedure.
                 }
                 // Step 5.1.3.
                 Err(BluetoothError::Network)

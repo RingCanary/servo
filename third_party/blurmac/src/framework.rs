@@ -368,6 +368,16 @@ pub mod cb {
         }
     }
 
+    pub fn peripheral_maximumwritevaluelengthfortype(
+        cbperipheral: *mut Object,
+        type_: c_int,
+    ) -> c_uint {
+        unsafe {
+            let length: c_uint = msg_send![cbperipheral, maximumWriteValueLengthForType: type_];
+            length
+        }
+    }
+
     pub fn peripheral_writevalue_forcharacteristic(
         cbperipheral: *mut Object,
         value: *mut Object,          /* NSData* */
