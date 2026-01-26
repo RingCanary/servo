@@ -326,8 +326,8 @@ unsafe fn create_egl_display(display: *mut Display) -> EGLDisplay {
         }
 
         // Fallback to eglGetDisplay (EGL 1.4) if needed
-        if egl_display == egl::NO_DISPLAY {
-             egl_display = egl.GetDisplay(display as *mut c_void);
+        if egl_display == egl::NO_DISPLAY && egl.GetDisplay.is_loaded() {
+            egl_display = egl.GetDisplay(display as *mut c_void);
         }
 
         assert_ne!(egl_display, egl::NO_DISPLAY);
