@@ -124,6 +124,8 @@ pub(crate) struct DisplayListBuilder<'a> {
 
     /// The collector for calculating Largest Contentful Paint
     lcp_candidate_collector: Option<&'a mut LargestContentfulPaintCandidateCollector>,
+
+    scratch_glyph_buffer: Vec<wr::GlyphInstance>,
 }
 
 struct InspectorHighlight {
@@ -202,6 +204,7 @@ impl DisplayListBuilder<'_> {
             image_resolver,
             device_pixel_ratio,
             lcp_candidate_collector,
+            scratch_glyph_buffer: Vec::new(),
         };
 
         builder.add_all_spatial_nodes();
@@ -741,14 +744,16 @@ impl Fragment {
         let include_whitespace =
             fragment.offsets.is_some() || text_decorations.iter().any(|item| !item.line.is_empty());
 
-        let glyphs = glyphs(
+        builder.scratch_glyph_buffer.clear();
+        glyphs(
             &fragment.glyphs,
             baseline_origin,
             fragment.justification_adjustment,
             include_whitespace,
+            &mut builder.scratch_glyph_buffer,
         );
 
-        if glyphs.is_empty() {
+        if builder.scratch_glyph_buffer.is_empty() {
             return;
         }
 
@@ -815,10 +820,10 @@ impl Fragment {
             baseline_origin,
         );
 
-        builder.wr().push_text(
+        builder.webrender_display_list_builder.push_text(
             &common,
             rect.to_webrender(),
-            &glyphs,
+            &builder.scratch_glyph_buffer,
             fragment.font_key,
             rgba(color),
             None,
@@ -1686,10 +1691,10 @@ fn glyphs(
     mut baseline_origin: PhysicalPoint<Au>,
     justification_adjustment: Au,
     include_whitespace: bool,
-) -> Vec<wr::GlyphInstance> {
+    glyphs: &mut Vec<wr::GlyphInstance>,
+) {
     use fonts_traits::ByteIndex;
 
-    let mut glyphs = vec![];
     for run in glyph_runs {
         for glyph in run.iter_glyphs_for_byte_range(TextByteRange::new(ByteIndex(0), run.len())) {
             if !run.is_whitespace() || include_whitespace {
@@ -1711,7 +1716,6 @@ fn glyphs(
             baseline_origin.x += glyph.advance();
         }
     }
-    glyphs
 }
 
 // TODO: The implementation here does not account for multiple glyph runs properly.
