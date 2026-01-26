@@ -1392,7 +1392,6 @@ pub(crate) fn handle_get_cookies(
 ) {
     reply
         .send(
-            // TODO: Return an error if the pipeline doesn't exist
             match documents.find_document(pipeline) {
                 Some(document) => {
                     let url = document.url();
@@ -1404,7 +1403,7 @@ pub(crate) fn handle_get_cookies(
                         .send(GetCookiesDataForUrl(url, sender, NonHTTP));
                     Ok(receiver.recv().unwrap())
                 },
-                None => Ok(Vec::new()),
+                None => Err(ErrorStatus::NoSuchWindow),
             },
         )
         .unwrap();
@@ -1419,7 +1418,6 @@ pub(crate) fn handle_get_cookie(
 ) {
     reply
         .send(
-            // TODO: Return an error if the pipeline doesn't exist
             match documents.find_document(pipeline) {
                 Some(document) => {
                     let url = document.url();
@@ -1435,7 +1433,7 @@ pub(crate) fn handle_get_cookie(
                         .filter(|cookie| cookie.name() == &*name)
                         .collect())
                 },
-                None => Ok(Vec::new()),
+                None => Err(ErrorStatus::NoSuchWindow),
             },
         )
         .unwrap();
