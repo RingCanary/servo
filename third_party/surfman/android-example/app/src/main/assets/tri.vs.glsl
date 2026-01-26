@@ -1,0 +1,1 @@
+../../../../../resources/examples/tri.vs.glsl
