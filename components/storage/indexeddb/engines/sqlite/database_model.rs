@@ -11,6 +11,7 @@ pub enum Column {
     Name,
     Origin,
     Version,
+    LastVacuumTime,
 }
 
 #[expect(dead_code)]
@@ -19,6 +20,6 @@ pub struct Model {
     pub name: String,
     pub origin: String,
     pub version: i64,
-    // TODO: Hold timestamp for vacuuming
+    pub last_vacuum_time: i64,
     // TODO: implement vacuuming
 }

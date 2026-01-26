@@ -127,11 +127,12 @@ impl SqliteEngine {
         // From https://w3c.github.io/IndexedDB/#database-version:
         // "When a database is first created, its version is 0 (zero)."
         connection.execute(
-            "INSERT INTO database (name, origin, version) VALUES (?, ?, ?)",
+            "INSERT INTO database (name, origin, version, last_vacuum_time) VALUES (?, ?, ?, ?)",
             params![
                 db_info.name.to_owned(),
                 db_info.origin.to_owned().ascii_serialization(),
-                i64::from_ne_bytes(0_u64.to_ne_bytes())
+                i64::from_ne_bytes(0_u64.to_ne_bytes()),
+                0_i64
             ],
         )?;
         Ok(connection)
@@ -1014,5 +1015,31 @@ mod tests {
         assert_eq!(amount, 1);
         remove.1.recv().unwrap().unwrap();
         clear.1.recv().unwrap().unwrap();
+    }
+
+    #[test]
+    fn test_vacuum_timestamp() {
+        let base_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let thread_pool = get_pool();
+        let db = SqliteEngine::new(
+            base_dir.path(),
+            &IndexedDBDescription {
+                name: "test_db".to_string(),
+                origin: test_origin(),
+            },
+            thread_pool,
+        )
+        .unwrap();
+
+        // Check if the last_vacuum_time column exists and is 0
+        let vacuum_time: i64 = db
+            .connection
+            .query_row(
+                "SELECT last_vacuum_time FROM database LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .expect("Failed to query last_vacuum_time");
+        assert_eq!(vacuum_time, 0);
     }
 }
