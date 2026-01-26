@@ -61,6 +61,8 @@ class BuildTarget(object):
             elif "ohos" in target_triple:
                 return OpenHarmonyTarget(target_triple)
             elif target_triple != host_triple:
+                if "linux" in target_triple:
+                    return LinuxCrossBuildTarget(target_triple)
                 raise Exception(f"Unknown build target {target_triple}")
         return BuildTarget(host_triple)
 
@@ -509,6 +511,66 @@ class OpenHarmonyTarget(CrossBuildTarget):
     def abi_string(self) -> str:
         abi_map = {"aarch64-unknown-linux-ohos": "arm64-v8a", "x86_64-unknown-linux-ohos": "x86_64"}
         return abi_map[self.triple()]
+
+
+class LinuxCrossBuildTarget(CrossBuildTarget):
+    def configure_build_environment(self, env: dict[str, str], config: dict[str, Any], topdir: pathlib.Path) -> None:
+        target = self.triple()
+
+        # Heuristic for Debian-based cross-compilation
+        # We try to deduce the tool prefix from the target triple
+        # Common pattern: <arch>-<vendor>-<os>-<abi> -> <arch>-<os>-<abi>-
+        # But mostly it is `aarch64-linux-gnu-` for `aarch64-unknown-linux-gnu`
+
+        tool_prefix = None
+        pkg_config_libdir = None
+
+        if target == "aarch64-unknown-linux-gnu":
+            tool_prefix = "aarch64-linux-gnu-"
+            pkg_config_libdir = "/usr/lib/aarch64-linux-gnu"
+        elif target == "armv7-unknown-linux-gnueabihf":
+            tool_prefix = "arm-linux-gnueabihf-"
+            pkg_config_libdir = "/usr/lib/arm-linux-gnueabihf"
+        elif "linux-gnu" in target:
+            # Generic fallback
+            parts = target.split("-")
+            if len(parts) >= 1:
+                arch = parts[0]
+                tool_prefix = f"{arch}-linux-gnu-"
+                pkg_config_libdir = f"/usr/lib/{arch}-linux-gnu"
+
+        if tool_prefix:
+            if "CC" not in env:
+                env["CC"] = f"{tool_prefix}gcc"
+            if "CXX" not in env:
+                env["CXX"] = f"{tool_prefix}g++"
+            if "AR" not in env:
+                env["AR"] = f"{tool_prefix}gcc-ar"
+            if "STRIP" not in env:
+                env["STRIP"] = f"{tool_prefix}strip"
+
+            # Check for cross-pkg-config
+            pkg_config_bin = f"{tool_prefix}pkg-config"
+            if shutil.which(pkg_config_bin):
+                env["PKG_CONFIG"] = pkg_config_bin
+            elif "PKG_CONFIG" not in env and pkg_config_libdir:
+                # If no cross-pkg-config, configure the standard one
+                env["PKG_CONFIG_PATH"] = f"{pkg_config_libdir}/pkgconfig"
+                env["PKG_CONFIG_LIBDIR"] = pkg_config_libdir
+
+        # Set TARGET_* variables for cc-rs and others
+        if "TARGET_CC" not in env and "CC" in env:
+            env["TARGET_CC"] = env["CC"]
+        if "TARGET_CXX" not in env and "CXX" in env:
+            env["TARGET_CXX"] = env["CXX"]
+        if "TARGET_AR" not in env and "AR" in env:
+            env["TARGET_AR"] = env["AR"]
+
+        # Host compiler defaults
+        if "HOST_CC" not in env:
+            env["HOST_CC"] = "gcc"
+        if "HOST_CXX" not in env:
+            env["HOST_CXX"] = "g++"
 
 
 def is_android(target: BuildTarget) -> TypeGuard[AndroidTarget]:
