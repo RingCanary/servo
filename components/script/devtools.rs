@@ -146,8 +146,8 @@ pub(crate) fn handle_get_children(
         None => reply.send(None).unwrap(),
         Some(parent) => {
             let is_whitespace = |node: &NodeInfo| {
-                node.node_type == NodeConstants::TEXT_NODE &&
-                    node.node_value.as_ref().is_none_or(|v| v.trim().is_empty())
+                node.node_type == NodeConstants::TEXT_NODE
+                    && node.node_value.as_ref().is_none_or(|v| v.trim().is_empty())
             };
 
             let inline: Vec<_> = parent
@@ -165,8 +165,8 @@ pub(crate) fn handle_get_children(
 
             let mut children = vec![];
             if let Some(shadow_root) = parent.downcast::<Element>().and_then(Element::shadow_root) {
-                if !shadow_root.is_user_agent_widget() ||
-                    pref!(inspector_show_servo_internal_shadow_roots)
+                if !shadow_root.is_user_agent_widget()
+                    || pref!(inspector_show_servo_internal_shadow_roots)
                 {
                     children.push(shadow_root.upcast::<Node>().summarize(can_gc));
                 }
@@ -211,14 +211,7 @@ pub(crate) fn handle_get_attribute_style(
     let style = elem.Style(can_gc);
 
     let msg = (0..style.Length())
-        .map(|i| {
-            let name = style.Item(i);
-            NodeStyle {
-                name: name.to_string(),
-                value: style.GetPropertyValue(name.clone()).to_string(),
-                priority: style.GetPropertyPriority(name).to_string(),
-            }
-        })
+        .filter_map(|i| style.inspect_style_at(i))
         .collect();
 
     reply.send(Some(msg)).unwrap();
@@ -253,16 +246,7 @@ pub(crate) fn handle_get_stylesheet_style(
                 };
                 Some(style.Style(can_gc))
             })
-            .flat_map(|style| {
-                (0..style.Length()).map(move |i| {
-                    let name = style.Item(i);
-                    NodeStyle {
-                        name: name.to_string(),
-                        value: style.GetPropertyValue(name.clone()).to_string(),
-                        priority: style.GetPropertyPriority(name).to_string(),
-                    }
-                })
-            })
+            .flat_map(|style| (0..style.Length()).filter_map(move |i| style.inspect_style_at(i)))
             .collect();
 
         Some(styles)
@@ -327,14 +311,7 @@ pub(crate) fn handle_get_computed_style(
     let computed_style = window.GetComputedStyle(elem, None);
 
     let msg = (0..computed_style.Length())
-        .map(|i| {
-            let name = computed_style.Item(i);
-            NodeStyle {
-                name: name.to_string(),
-                value: computed_style.GetPropertyValue(name.clone()).to_string(),
-                priority: computed_style.GetPropertyPriority(name).to_string(),
-            }
-        })
+        .filter_map(|i| computed_style.inspect_style_at(i))
         .collect();
 
     reply.send(Some(msg)).unwrap();
@@ -418,8 +395,8 @@ pub(crate) fn handle_get_xpath(
                 let Some(sibling) = sibling.downcast::<Element>() else {
                     return false;
                 };
-                sibling.namespace() == element.namespace() &&
-                    sibling.local_name() == element.local_name()
+                sibling.namespace() == element.namespace()
+                    && sibling.local_name() == element.local_name()
             };
 
             let matching_elements_before = ancestor

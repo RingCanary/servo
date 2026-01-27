@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::sync::LazyLock;
 
+use devtools_traits::NodeStyle;
 use dom_struct::dom_struct;
 use html5ever::local_name;
 use servo_arc::Arc;
@@ -236,8 +237,8 @@ impl CSSStyleDeclaration {
         // If creating a CSSStyleDeclaration with CSSSStyleOwner::Null, this should always
         // be in read-only mode.
         assert!(
-            !matches!(owner, CSSStyleOwner::Null) ||
-                modification_access == CSSModificationAccess::Readonly
+            !matches!(owner, CSSStyleOwner::Null)
+                || modification_access == CSSModificationAccess::Readonly
         );
 
         CSSStyleDeclaration {
@@ -276,6 +277,47 @@ impl CSSStyleDeclaration {
         } else {
             panic!("update_rule called on CSSStyleDeclaration with a Element owner");
         }
+    }
+
+    pub(crate) fn inspect_style_at(&self, index: u32) -> Option<NodeStyle> {
+        if matches!(self.owner, CSSStyleOwner::Null) {
+            return None;
+        }
+
+        if self.readonly {
+            // Readonly style declarations are used for getComputedStyle.
+            let longhand = ENABLED_LONGHAND_PROPERTIES.get(index as usize)?;
+            let id = PropertyId::NonCustom((*longhand).into());
+            let name = longhand.name().to_string();
+            let value = String::from(self.get_computed_style(id));
+
+            return Some(NodeStyle {
+                name,
+                value,
+                priority: String::new(),
+            });
+        }
+
+        self.owner.with_block(|pdb| {
+            let declaration = pdb.declarations().get(index as usize)?;
+            let id = declaration.id();
+            let name = id.name().to_string();
+
+            let mut value = String::new();
+            pdb.property_value_to_css(id, &mut value).unwrap();
+
+            let priority = if pdb.property_priority(id).important() {
+                "important".to_string()
+            } else {
+                String::new()
+            };
+
+            Some(NodeStyle {
+                name,
+                value,
+                priority,
+            })
+        })
     }
 
     fn get_computed_style(&self, property: PropertyId) -> DOMString {
