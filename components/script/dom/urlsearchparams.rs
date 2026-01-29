@@ -85,13 +85,21 @@ impl URLSearchParamsMethods<crate::DomTypeHolder> for URLSearchParams {
                 }
 
                 // Step 2-2.
-                *query.list.borrow_mut() =
-                    init.iter().map(|pair| (pair[0].to_string(), pair[1].to_string())).collect::<Vec<_>>();
+                *query.list.borrow_mut() = init
+                    .into_iter()
+                    .map(|mut pair| {
+                        let value = pair.pop().unwrap().0;
+                        let name = pair.pop().unwrap().0;
+                        (name, value)
+                    })
+                    .collect::<Vec<_>>();
             },
             USVStringSequenceSequenceOrUSVStringUSVStringRecordOrUSVString::USVStringUSVStringRecord(init) => {
                 // Step 3.
-                *query.list.borrow_mut() =
-                    (*init).iter().map(|(name, value)| (name.to_string(), value.to_string())).collect::<Vec<_>>();
+                *query.list.borrow_mut() = (*init)
+                    .into_iter()
+                    .map(|(name, value)| (name.0, value.0))
+                    .collect::<Vec<_>>();
             },
             USVStringSequenceSequenceOrUSVStringUSVStringRecordOrUSVString::USVString(init) => {
                 // Step 4.
