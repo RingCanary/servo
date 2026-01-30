@@ -138,6 +138,11 @@ impl<K, V, S> HashMapTracedValues<K, V, S> {
     pub(crate) fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    #[inline]
+    pub(crate) fn len(&self) -> usize {
+        self.0.len()
+    }
 }
 
 impl<K, V, S> HashMapTracedValues<K, V, S>
