@@ -90,36 +90,7 @@ enum RegistrationUpdateTarget {
 impl Drop for ServiceWorkerRegistration {
     /// <https://html.spec.whatwg.org/multipage/#terminate-a-worker>
     fn drop(&mut self) {
-        // Drop the channel to signal shutdown.
-        if self
-            .control_sender
-            .take()
-            .expect("No control sender to worker thread.")
-            .send(ServiceWorkerControlMsg::Exit)
-            .is_err()
-        {
-            warn!("Failed to send exit message to service worker scope.");
-        }
-
-        self.closing
-            .take()
-            .expect("No close flag for worker")
-            .store(true, Ordering::SeqCst);
-        self.context
-            .take()
-            .expect("No context to request interrupt.")
-            .request_interrupt_callback();
-
-        // TODO: Step 1, 2 and 3.
-        if self
-            .join_handle
-            .take()
-            .expect("No handle to join on worker.")
-            .join()
-            .is_err()
-        {
-            warn!("Failed to join on service worker thread.");
-        }
+        self.terminate_worker();
     }
 }
 
@@ -176,6 +147,30 @@ impl ServiceWorkerRegistration {
 
         assert!(self.closing.is_none());
         self.closing = Some(closing);
+    }
+
+    /// <https://w3c.github.io/ServiceWorker/#terminate-service-worker>
+    fn terminate_worker(&mut self) {
+        // Drop the channel to signal shutdown.
+        if let Some(control_sender) = self.control_sender.take() {
+            if control_sender.send(ServiceWorkerControlMsg::Exit).is_err() {
+                warn!("Failed to send exit message to service worker scope.");
+            }
+        }
+
+        if let Some(closing) = self.closing.take() {
+            closing.store(true, Ordering::SeqCst);
+        }
+        if let Some(context) = self.context.take() {
+            context.request_interrupt_callback();
+        }
+
+        // TODO: Step 1, 2 and 3.
+        if let Some(join_handle) = self.join_handle.take() {
+            if join_handle.join().is_err() {
+                warn!("Failed to join on service worker thread.");
+            }
+        }
     }
 
     /// <https://w3c.github.io/ServiceWorker/#get-newest-worker>
@@ -299,8 +294,11 @@ impl ServiceWorkerManager {
 
     fn handle_message_from_constellation(&mut self, msg: ServiceWorkerMsg) -> bool {
         match msg {
-            ServiceWorkerMsg::Timeout(_scope) => {
-                // TODO: https://w3c.github.io/ServiceWorker/#terminate-service-worker
+            ServiceWorkerMsg::Timeout(scope) => {
+                // <https://w3c.github.io/ServiceWorker/#terminate-service-worker>
+                if let Some(registration) = self.registrations.get_mut(&scope) {
+                    registration.terminate_worker();
+                }
             },
             ServiceWorkerMsg::ForwardDOMMessage(msg, scope_url) => {
                 if let Some(registration) = self.registrations.get_mut(&scope_url) {

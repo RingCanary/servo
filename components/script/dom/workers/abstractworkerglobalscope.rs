@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use std::time::Instant;
+
 use crossbeam_channel::{Receiver, select};
 use devtools_traits::DevtoolScriptControlMsg;
 use rustc_hash::FxHashSet;
@@ -31,6 +33,11 @@ pub(crate) trait WorkerEventLoopMethods {
     fn from_devtools_msg(msg: DevtoolScriptControlMsg) -> Self::Event;
     fn from_timer_msg() -> Self::Event;
     fn control_receiver(&self) -> &Receiver<Self::ControlMsg>;
+
+    fn timeout_receiver(&self) -> Receiver<Instant> {
+        crossbeam_channel::never()
+    }
+    fn from_timeout_msg() -> Self::Event;
 }
 
 // https://html.spec.whatwg.org/multipage/#worker-event-loop
@@ -60,6 +67,7 @@ pub(crate) fn run_worker_event_loop<T, WorkerMsg, Event>(
         // RoutedReceivers have two results
         recv(devtools_receiver) -> msg => T::from_devtools_msg(msg.unwrap().unwrap()),
         recv(scope.timer_scheduler().wait_channel()) -> _ => T::from_timer_msg(),
+        recv(worker_scope.timeout_receiver()) -> _ => T::from_timeout_msg(),
     };
 
     scope.timer_scheduler().dispatch_completed_timers();

@@ -134,6 +134,7 @@ pub(crate) enum MixedMessage {
     ServiceWorker(ServiceWorkerScriptMsg),
     Devtools(DevtoolScriptControlMsg),
     Control(ServiceWorkerControlMsg),
+    Timeout,
     Timer,
 }
 
@@ -211,8 +212,16 @@ impl WorkerEventLoopMethods for ServiceWorkerGlobalScope {
         MixedMessage::Timer
     }
 
+    fn from_timeout_msg() -> MixedMessage {
+        MixedMessage::Timeout
+    }
+
     fn control_receiver(&self) -> &Receiver<ServiceWorkerControlMsg> {
         &self.control_receiver
+    }
+
+    fn timeout_receiver(&self) -> Receiver<Instant> {
+        self.time_out_port.clone()
     }
 }
 
@@ -459,6 +468,9 @@ impl ServiceWorkerGlobalScope {
             },
             MixedMessage::Control(ServiceWorkerControlMsg::Exit) => {
                 return false;
+            },
+            MixedMessage::Timeout => {
+                let _ = self.swmanager_sender.send(ServiceWorkerMsg::Timeout(self.scope_url.clone()));
             },
             MixedMessage::Timer => {},
         }
