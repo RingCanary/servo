@@ -165,6 +165,9 @@ cfg_if! {
         use tracing::Subscriber;
         use tracing_subscriber::Layer;
 
+        /// Marker struct stored in span extensions if the span has `servo_profiling` field.
+        struct ServoProfiling;
+
         #[cfg(debug_assertions)]
         thread_local! {
             /// Stack of span names, to ensure the HiTrace synchronous API is not misused.
@@ -174,11 +177,23 @@ cfg_if! {
         impl<S: Subscriber + for<'lookup> tracing_subscriber::registry::LookupSpan<'lookup>>
             Layer<S> for HitraceLayer
         {
+            fn on_new_span(
+                &self,
+                attrs: &tracing::span::Attributes<'_>,
+                id: &Id,
+                ctx: tracing_subscriber::layer::Context<'_, S>,
+            ) {
+                if attrs.metadata().fields().field("servo_profiling").is_some() {
+                    if let Some(span) = ctx.span(id) {
+                        span.extensions_mut().insert(ServoProfiling);
+                    }
+                }
+            }
+
             fn on_enter(&self, id: &Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
-                if let Some(metadata) = ctx.metadata(id) {
-                    // TODO: is this expensive? Would extensions be faster?
-                    // <https://docs.rs/tracing-subscriber/0.3.18/tracing_subscriber/registry/struct.ExtensionsMut.html>
-                    if metadata.fields().field("servo_profiling").is_some() {
+                if let Some(span) = ctx.span(id) {
+                    if span.extensions().get::<ServoProfiling>().is_some() {
+                        let metadata = span.metadata();
                         #[cfg(debug_assertions)]
                         HITRACE_NAME_STACK.with_borrow_mut(|stack|
                             stack.push(metadata.name().to_owned()));
@@ -201,16 +216,17 @@ cfg_if! {
 
 
             fn on_exit(&self, id: &Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
-                if let Some(metadata) = ctx.metadata(id) {
-                    if metadata.fields().field("servo_profiling").is_some() {
+                if let Some(span) = ctx.span(id) {
+                    if span.extensions().get::<ServoProfiling>().is_some() {
                         hitrace::finish_trace();
 
                         #[cfg(debug_assertions)]
                         HITRACE_NAME_STACK.with_borrow_mut(|stack| {
-                            if stack.last().map(|name| &**name) != Some(metadata.name()) {
+                            let name = span.name();
+                            if stack.last().map(|n| &**n) != Some(name) {
                                 log::error!(
                                     "Tracing span out of order: {} (stack: {:?})",
-                                    metadata.name(),
+                                    name,
                                     stack
                                 );
                             }
