@@ -784,6 +784,21 @@ impl WindowProxy {
         self.currently_active.set(None);
     }
 
+    pub(crate) fn suspend_active_document(&self, can_gc: CanGc) {
+        if self.currently_active().is_none() {
+            return debug!(
+                "Attempt to suspend the currently active window on a windowproxy that does not have one."
+            );
+        }
+        let globalscope = self.global();
+        let window = DissimilarOriginWindow::new(&globalscope, self);
+        self.set_window(
+            window.upcast(),
+            WindowProxyHandler::x_origin_proxy_handler(),
+            can_gc,
+        );
+    }
+
     pub(crate) fn currently_active(&self) -> Option<PipelineId> {
         self.currently_active.get()
     }

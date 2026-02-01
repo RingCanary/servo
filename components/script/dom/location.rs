@@ -197,10 +197,6 @@ impl Location {
             // > If this `Location` object's relevant `Document` is non-null and
             // > its origin is not same origin-domain with the entry settings
             // > object's origin, then throw a "SecurityError" `DOMException`.
-            //
-            // FIXME: We should still return the active document if it's same
-            //        origin but not fully active. `WindowProxy::document`
-            //        currently returns `None` in this case.
             if let Some(document) = window_proxy.document().filter(|document| {
                 self.entry_settings_object()
                     .origin()

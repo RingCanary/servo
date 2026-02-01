@@ -3310,7 +3310,11 @@ impl Window {
 
         // Set the window proxy to be a cross-origin window.
         if self.window_proxy().currently_active() == Some(self.global().pipeline_id()) {
-            self.window_proxy().unset_currently_active(can_gc);
+            if self.is_top_level() {
+                self.window_proxy().unset_currently_active(can_gc);
+            } else {
+                self.window_proxy().suspend_active_document(can_gc);
+            }
         }
 
         // A hint to the JS runtime that now would be a good time to
