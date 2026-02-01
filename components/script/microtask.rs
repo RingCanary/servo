@@ -171,11 +171,14 @@ impl MicrotaskQueue {
         // Step 4. For each environment settings object settingsObject whose responsible
         // event loop is this event loop, notify about rejected promises given
         // settingsObject's global object.
-        for global in globalscopes.into_iter() {
-            notify_about_rejected_promises(&global);
+        for global in globalscopes.iter() {
+            notify_about_rejected_promises(global);
         }
 
-        // TODO: Step 5. Cleanup Indexed Database transactions.
+        // Step 5. Cleanup Indexed Database transactions.
+        for global in globalscopes.iter() {
+            global.cleanup_indexed_db_transactions();
+        }
 
         // TODO: Step 6. Perform ClearKeptObjects().
 

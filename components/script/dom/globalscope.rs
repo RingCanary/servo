@@ -121,6 +121,7 @@ use crate::dom::eventsource::EventSource;
 use crate::dom::eventtarget::EventTarget;
 use crate::dom::file::File;
 use crate::dom::idbfactory::IDBFactory;
+use crate::dom::indexeddb::idbtransaction::IDBTransaction;
 use crate::dom::messageport::MessagePort;
 use crate::dom::paintworkletglobalscope::PaintWorkletGlobalScope;
 use crate::dom::performance::performance::Performance;
@@ -416,6 +417,10 @@ pub(crate) struct GlobalScope {
     /// <https://fetch.spec.whatwg.org/#environment-settings-object-fetch-group>
     #[no_trace]
     fetch_group: RefCell<FetchGroup>,
+
+    /// List of active IndexedDB transactions to be cleaned up at microtask checkpoint.
+    /// <https://w3c.github.io/IndexedDB/#cleanup-indexed-database-transactions>
+    idb_transaction_list: DomRefCell<Vec<Dom<IDBTransaction>>>,
 }
 
 /// A wrapper for glue-code between the ipc router and the event-loop.
@@ -826,6 +831,7 @@ impl GlobalScope {
             resolved_module_set: Default::default(),
             font_context,
             fetch_group: Default::default(),
+            idb_transaction_list: Default::default(),
         }
     }
 
@@ -3474,6 +3480,30 @@ impl GlobalScope {
             .get(deferred_fetch_record_id)
             .expect("Should always use a generated fetch_record_id instead of passing your own")
             .clone()
+    }
+
+    pub(crate) fn register_idb_transaction(&self, transaction: &IDBTransaction) {
+        self.idb_transaction_list
+            .borrow_mut()
+            .push(Dom::from_ref(transaction));
+    }
+
+    /// <https://w3c.github.io/IndexedDB/#cleanup-indexed-database-transactions>
+    pub(crate) fn cleanup_indexed_db_transactions(&self) {
+        let mut transactions = self.idb_transaction_list.borrow_mut();
+        // Step 1. For each transaction transaction, proceed to the next step.
+        // We drain the list because transactions only need to be processed once here.
+        // If they remain active (because of pending requests), they will be committed
+        // when the requests finish.
+        for transaction in transactions.drain(..) {
+            // Step 2. If the transaction’s active flag is true, set it to false.
+            if transaction.is_active() {
+                transaction.set_active_flag(false);
+            }
+            // Step 3. If the transaction’s request list is empty, then commit transaction.
+            // Note: set_active_flag(false) will automatically trigger commit (via dispatch_complete)
+            // if the request list is empty.
+        }
     }
 
     /// <https://fetch.spec.whatwg.org/#process-deferred-fetches>
