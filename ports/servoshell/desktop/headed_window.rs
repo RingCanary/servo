@@ -1050,22 +1050,10 @@ impl PlatformWindow for HeadedWindow {
         let control_id = embedder_control.id();
         match embedder_control {
             EmbedderControl::SelectElement(prompt) => {
-                // FIXME: Reading the toolbar height is needed here to properly position the select dialog.
-                // But if the toolbar height changes while the dialog is open then the position won't be updated
-                let offset = self.gui.borrow().toolbar_height();
-                self.add_dialog(
-                    webview_id,
-                    Dialog::new_select_element_dialog(prompt, offset),
-                );
+                self.add_dialog(webview_id, Dialog::new_select_element_dialog(prompt));
             },
             EmbedderControl::ColorPicker(color_picker) => {
-                // FIXME: Reading the toolbar height is needed here to properly position the select dialog.
-                // But if the toolbar height changes while the dialog is open then the position won't be updated
-                let offset = self.gui.borrow().toolbar_height();
-                self.add_dialog(
-                    webview_id,
-                    Dialog::new_color_picker_dialog(color_picker, offset),
-                );
+                self.add_dialog(webview_id, Dialog::new_color_picker_dialog(color_picker));
             },
             EmbedderControl::InputMethod(input_method_control) => {
                 self.visible_input_methods.borrow_mut().push(control_id);
@@ -1078,8 +1066,7 @@ impl PlatformWindow for HeadedWindow {
                 self.add_dialog(webview_id, Dialog::new_simple_dialog(simple_dialog));
             },
             EmbedderControl::ContextMenu(prompt) => {
-                let offset = self.gui.borrow().toolbar_height();
-                self.add_dialog(webview_id, Dialog::new_context_menu(prompt, offset));
+                self.add_dialog(webview_id, Dialog::new_context_menu(prompt));
             },
         }
     }

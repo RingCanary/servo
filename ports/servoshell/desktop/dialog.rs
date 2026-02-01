@@ -47,16 +47,13 @@ pub enum Dialog {
     },
     SelectElement {
         maybe_prompt: Option<SelectElement>,
-        toolbar_offset: Length<f32, DeviceIndependentPixel>,
     },
     ColorPicker {
         current_color: egui::Color32,
         maybe_prompt: Option<ColorPicker>,
-        toolbar_offset: Length<f32, DeviceIndependentPixel>,
     },
     ContextMenu {
         menu: Option<ContextMenu>,
-        toolbar_offset: Length<f32, DeviceIndependentPixel>,
     },
 }
 
@@ -124,20 +121,13 @@ impl Dialog {
         }
     }
 
-    pub fn new_select_element_dialog(
-        prompt: SelectElement,
-        toolbar_offset: Length<f32, DeviceIndependentPixel>,
-    ) -> Self {
+    pub fn new_select_element_dialog(prompt: SelectElement) -> Self {
         Dialog::SelectElement {
             maybe_prompt: Some(prompt),
-            toolbar_offset,
         }
     }
 
-    pub fn new_color_picker_dialog(
-        prompt: ColorPicker,
-        toolbar_offset: Length<f32, DeviceIndependentPixel>,
-    ) -> Self {
+    pub fn new_color_picker_dialog(prompt: ColorPicker) -> Self {
         let current_color = prompt
             .current_color()
             .map(|color| egui::Color32::from_rgb(color.red, color.green, color.blue))
@@ -145,12 +135,15 @@ impl Dialog {
         Dialog::ColorPicker {
             current_color,
             maybe_prompt: Some(prompt),
-            toolbar_offset,
         }
     }
 
     /// Returns false if the dialog has been closed, or true otherwise.
-    pub fn update(&mut self, ctx: &egui::Context) -> bool {
+    pub fn update(
+        &mut self,
+        ctx: &egui::Context,
+        toolbar_height: Length<f32, DeviceIndependentPixel>,
+    ) -> bool {
         enum DialogAction {
             Dismiss,
             Submit,
@@ -457,10 +450,7 @@ impl Dialog {
                 });
                 is_open
             },
-            Dialog::SelectElement {
-                maybe_prompt,
-                toolbar_offset,
-            } => {
+            Dialog::SelectElement { maybe_prompt } => {
                 let Some(prompt) = maybe_prompt else {
                     // Prompt was dismissed, so the dialog should be closed too.
                     return false;
@@ -468,8 +458,8 @@ impl Dialog {
                 let mut is_open = true;
 
                 let mut position = prompt.position();
-                position.min.y += toolbar_offset.0 as i32;
-                position.max.y += toolbar_offset.0 as i32;
+                position.min.y += toolbar_height.0 as i32;
+                position.max.y += toolbar_height.0 as i32;
                 let area = egui::Area::new(egui::Id::new("select-window"))
                     .fixed_pos(egui::pos2(position.min.x as f32, position.max.y as f32));
 
@@ -568,7 +558,6 @@ impl Dialog {
             Dialog::ColorPicker {
                 current_color,
                 maybe_prompt,
-                toolbar_offset,
             } => {
                 let Some(prompt) = maybe_prompt else {
                     // Prompt was dismissed, so the dialog should be closed too.
@@ -577,8 +566,8 @@ impl Dialog {
                 let mut is_open = true;
 
                 let mut position = prompt.position();
-                position.min.y += toolbar_offset.0 as i32;
-                position.max.y += toolbar_offset.0 as i32;
+                position.min.y += toolbar_height.0 as i32;
+                position.max.y += toolbar_height.0 as i32;
                 let area = egui::Area::new(egui::Id::new("select-window"))
                     .fixed_pos(egui::pos2(position.min.x as f32, position.max.y as f32));
 
@@ -618,16 +607,13 @@ impl Dialog {
 
                 is_open
             },
-            Dialog::ContextMenu {
-                menu,
-                toolbar_offset,
-            } => {
+            Dialog::ContextMenu { menu } => {
                 let mut is_open = true;
                 if let Some(context_menu) = menu {
                     let mut selected_action = None;
                     let mut position = context_menu.position();
-                    position.min.y += toolbar_offset.0 as i32;
-                    position.max.y += toolbar_offset.0 as i32;
+                    position.min.y += toolbar_height.0 as i32;
+                    position.max.y += toolbar_height.0 as i32;
 
                     let response = Area::new(Id::new("context_menu"))
                         .fixed_pos(pos2(position.min.x as f32, position.min.y as f32))
@@ -698,24 +684,19 @@ impl Dialog {
 
     pub(crate) fn embedder_control_id(&self) -> Option<EmbedderControlId> {
         match self {
-            Dialog::SelectElement { maybe_prompt, .. } => {
+            Dialog::SelectElement { maybe_prompt } => {
                 maybe_prompt.as_ref().map(|element| element.id())
             },
-            Dialog::ColorPicker { maybe_prompt, .. } => {
-                maybe_prompt.as_ref().map(|element| element.id())
-            },
+            Dialog::ColorPicker {
+                maybe_prompt,
+                current_color: _,
+            } => maybe_prompt.as_ref().map(|element| element.id()),
             _ => None,
         }
     }
 
-    pub(crate) fn new_context_menu(
-        menu: ContextMenu,
-        toolbar_offset: Length<f32, DeviceIndependentPixel>,
-    ) -> Dialog {
-        Dialog::ContextMenu {
-            menu: Some(menu),
-            toolbar_offset,
-        }
+    pub(crate) fn new_context_menu(menu: ContextMenu) -> Dialog {
+        Dialog::ContextMenu { menu: Some(menu) }
     }
 }
 

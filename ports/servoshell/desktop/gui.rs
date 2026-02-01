@@ -467,7 +467,8 @@ impl Gui {
             let scale =
                 Scale::<_, DeviceIndependentPixel, DevicePixel>::new(ctx.pixels_per_point());
 
-            headed_window.for_each_active_dialog(window, |dialog| dialog.update(ctx));
+            headed_window.for_each_active_dialog(window, |dialog|
+                dialog.update(ctx, *toolbar_height));
 
             // If the top parts of the GUI changed size, then update the size of the WebView and also
             // the size of its RenderingContext.

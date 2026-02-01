@@ -1,0 +1,110 @@
+    Checking webrender v0.68.0 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/platform/unix/x11/connection.rs:279:32
+    |
+279 |     pub(crate) fn lock_display(&self) -> DisplayGuard {
+    |                                ^^^^^     ^^^^^^^^^^^^ the same lifetime is hidden here
+    |                                |
+    |                                the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+279 |     pub(crate) fn lock_display(&self) -> DisplayGuard<'_> {
+    |                                                      ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:484:13
+    |
+484 |     fn lock(&self) -> MutexGuard<SwapChainData<Device>> {
+    |             ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |             |
+    |             the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+484 |     fn lock(&self) -> MutexGuard<'_, SwapChainData<Device>> {
+    |                                  +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:679:12
+    |
+679 |     fn ids(&self) -> MutexGuard<FnvHashMap<ContextID, FnvHashSet<SwapChainID>>> {
+    |            ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |            |
+    |            the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+679 |     fn ids(&self) -> MutexGuard<'_, FnvHashMap<ContextID, FnvHashSet<SwapChainID>>> {
+    |                                 +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:684:14
+    |
+684 |     fn table(&self) -> RwLockReadGuard<FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |              ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |              |
+    |              the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+684 |     fn table(&self) -> RwLockReadGuard<'_, FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                                        +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:689:18
+    |
+689 |     fn table_mut(&self) -> RwLockWriteGuard<FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                  ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                  |
+    |                  the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+689 |     fn table_mut(&self) -> RwLockWriteGuard<'_, FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                                             +++
+
+warning: `surfman` (lib) generated 5 warnings (run `cargo fix --lib -p surfman` to apply 5 suggestions)
+   Compiling script_bindings v0.0.1 (/app/components/script_bindings)
+   Compiling mozangle v0.5.4
+    Checking sea-query v1.0.0-rc.29
+   Compiling libudev-sys v0.1.4
+error: failed to run custom build command for `libudev-sys v0.1.4`
+
+Caused by:
+  process didn't exit successfully: `/app/target/debug/build/libudev-sys-32add8b0ef0f6cf7/build-script-build` (exit status: 101)
+  --- stdout
+  cargo:rerun-if-env-changed=LIBUDEV_NO_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+  cargo:rerun-if-env-changed=PKG_CONFIG
+  cargo:rerun-if-env-changed=LIBUDEV_STATIC
+  cargo:rerun-if-env-changed=LIBUDEV_DYNAMIC
+  cargo:rerun-if-env-changed=PKG_CONFIG_ALL_STATIC
+  cargo:rerun-if-env-changed=PKG_CONFIG_ALL_DYNAMIC
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+  cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+  cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+
+  --- stderr
+
+  thread 'main' (19064) panicked at /home/jules/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libudev-sys-0.1.4/build.rs:38:41:
+  called `Result::unwrap()` on an `Err` value: "\npkg-config exited with status code 1\n> PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags libudev\n\nThe system library `libudev` required by crate `libudev-sys` was not found.\nThe file `libudev.pc` needs to be installed and the PKG_CONFIG_PATH environment variable must contain its parent directory.\nThe PKG_CONFIG_PATH environment variable is not set.\n\nHINT: if you have installed the library, try setting PKG_CONFIG_PATH to the directory containing `libudev.pc`.\n"
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+warning: build failed, waiting for other jobs to finish...
