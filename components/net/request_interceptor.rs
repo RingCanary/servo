@@ -72,8 +72,15 @@ impl RequestInterceptor {
                         error!("Received unexpected FinishLoad message");
                         break;
                     };
-                    *response.body.lock() =
-                        ResponseBody::Done(accumulated_body.into_iter().flatten().collect());
+
+                    // Optimization: Pre-allocate vector to avoid reallocations during collection
+                    let total_len: usize = accumulated_body.iter().map(|c| c.len()).sum();
+                    let mut final_body = Vec::with_capacity(total_len);
+                    for chunk in accumulated_body {
+                        final_body.extend(chunk);
+                    }
+
+                    *response.body.lock() = ResponseBody::Done(final_body);
                     break;
                 },
                 WebResourceResponseMsg::CancelLoad => {
