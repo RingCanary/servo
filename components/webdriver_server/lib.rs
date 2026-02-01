@@ -431,7 +431,6 @@ enum VerifyBrowsingContextIsOpen {
 
 enum ImplicitWait {
     Return,
-    #[expect(dead_code, reason = "This will be used in the next patch")]
     Continue,
 }
 
@@ -2186,18 +2185,33 @@ impl Handler {
         // Step 4. Handle any user prompt.
         self.handle_any_user_prompts(self.webview_id()?)?;
 
-        let (sender, receiver) = generic_channel::channel().unwrap();
-        let cmd = WebDriverScriptCommand::WillSendKeys(
-            element.to_string(),
-            keys.text.to_string(),
-            self.session()?.strict_file_interactability(),
-            sender,
-        );
-        self.browsing_context_script_command(cmd, VerifyBrowsingContextIsOpen::No)?;
+        let result = self.implicit_wait(|| {
+            let (sender, receiver) = generic_channel::channel().unwrap();
+            let cmd = WebDriverScriptCommand::WillSendKeys(
+                element.to_string(),
+                keys.text.to_string(),
+                self.session()
+                    .map_err(|e| (ImplicitWait::Return.into(), e))?
+                    .strict_file_interactability(),
+                sender,
+            );
+            self.browsing_context_script_command(cmd, VerifyBrowsingContextIsOpen::No)
+                .map_err(|e| (ImplicitWait::Return.into(), e))?;
+
+            wait_for_ipc_response_flatten(receiver)
+                .map(|x| (true, x))
+                .map_err(|e| {
+                    if e.error == ErrorStatus::ElementNotInteractable {
+                        (ImplicitWait::Continue.into(), e)
+                    } else {
+                        (ImplicitWait::Return.into(), e)
+                    }
+                })
+        })?;
 
         // File input and non-typeable form control should have
         // been handled in `webdriver_handler.rs`.
-        if !wait_for_ipc_response_flatten(receiver)? {
+        if !result {
             return Ok(WebDriverResponse::Void);
         }
 

@@ -1264,8 +1264,9 @@ pub(crate) fn handle_will_send_keys(
         // Step 7.1. Scroll into view the element
         scroll_into_view(&element, documents, &pipeline, can_gc);
 
-        // TODO: Step 7.2 - 7.5
+        // Step 7.2 - 7.5
         // Wait until element become keyboard-interactable
+        // This is handled by implicit_wait in webdriver_server.
 
         // Step 7.6. If element is not keyboard-interactable,
         // return ErrorStatus::ElementNotInteractable.
