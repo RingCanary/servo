@@ -105,6 +105,7 @@ pub(crate) enum MixedMessage {
     Worker(DedicatedWorkerScriptMsg),
     Devtools(DevtoolScriptControlMsg),
     Control(DedicatedWorkerControlMsg),
+    Timeout,
     Timer,
 }
 
@@ -236,6 +237,10 @@ impl WorkerEventLoopMethods for DedicatedWorkerGlobalScope {
 
     fn from_timer_msg() -> MixedMessage {
         MixedMessage::Timer
+    }
+
+    fn from_timeout_msg() -> MixedMessage {
+        MixedMessage::Timeout
     }
 
     fn control_receiver(&self) -> &Receiver<DedicatedWorkerControlMsg> {
@@ -653,6 +658,9 @@ impl DedicatedWorkerGlobalScope {
                 return false;
             },
             MixedMessage::Timer => {},
+            MixedMessage::Timeout => {
+                warn!("Received unexpected timeout message in DedicatedWorker");
+            },
         }
         true
     }
