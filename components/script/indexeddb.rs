@@ -17,7 +17,7 @@ use js::rust::wrappers2::{
     GetArrayLength, GetBuiltinClass, IsArrayObject, JS_GetProperty, JS_HasOwnProperty,
     JS_HasOwnPropertyById, JS_IndexToId, JS_IsIdentifier, JS_NewObject, NewDateObject,
 };
-use js::rust::{HandleValue, MutableHandleValue};
+use js::rust::{HandleObject, HandleValue, MutableHandleValue};
 use storage_traits::indexeddb::{BackendError, IndexedDBKeyRange, IndexedDBKeyType};
 
 use crate::dom::bindings::codegen::Bindings::BlobBinding::BlobMethods;
@@ -140,16 +140,18 @@ impl ConversionResult {
 pub fn convert_value_to_key(
     cx: &mut JSContext,
     input: HandleValue,
-    seen: Option<Vec<HandleValue>>,
+    seen: Option<&[HandleObject]>,
 ) -> Result<ConversionResult, Error> {
     // Step 1: If seen was not given, then let seen be a new empty set.
-    let mut seen = seen.unwrap_or_default();
+    let seen_slice = seen.unwrap_or(&[]);
 
     // Step 2: If seen contains input, then return invalid.
-    // FIXME:(arihant2math) implement this
-    // Check if we have seen this key
-    // Does not currently work with HandleValue,
-    // as it does not implement PartialEq
+    if input.is_object() {
+        rooted!(&in(cx) let object = input.to_object());
+        if seen_slice.iter().any(|h| h.get() == object.get()) {
+            return Ok(ConversionResult::Invalid);
+        }
+    }
 
     // Step 3
     // FIXME:(arihant2math) Accept array as well
@@ -201,7 +203,10 @@ pub fn convert_value_to_key(
                 if !GetArrayLength(cx, object.handle(), &mut len) {
                     return Err(Error::JSFailed);
                 }
-                seen.push(input);
+                let mut new_seen = Vec::with_capacity(seen_slice.len() + 1);
+                new_seen.extend_from_slice(seen_slice);
+                new_seen.push(object.handle());
+
                 let mut values = vec![];
                 for i in 0..len {
                     rooted!(&in(cx) let mut id: PropertyKey);
@@ -224,7 +229,7 @@ pub fn convert_value_to_key(
                     ) {
                         return Err(Error::JSFailed);
                     }
-                    let key = match convert_value_to_key(cx, item.handle(), Some(seen.clone()))? {
+                    let key = match convert_value_to_key(cx, item.handle(), Some(&new_seen))? {
                         ConversionResult::Valid(key) => key,
                         ConversionResult::Invalid => return Ok(ConversionResult::Invalid),
                     };
