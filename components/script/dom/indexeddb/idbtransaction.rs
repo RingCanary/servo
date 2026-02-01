@@ -100,7 +100,7 @@ impl IDBTransaction {
         can_gc: CanGc,
     ) -> DomRoot<IDBTransaction> {
         let serial_number = IDBTransaction::register_new(global, connection.get_name());
-        reflect_dom_object(
+        let transaction = reflect_dom_object(
             Box::new(IDBTransaction::new_inherited(
                 connection,
                 mode,
@@ -110,7 +110,9 @@ impl IDBTransaction {
             )),
             global,
             can_gc,
-        )
+        );
+        global.register_idb_transaction(&transaction);
+        transaction
     }
 
     /// Create a new WebIDL object,
@@ -125,7 +127,7 @@ impl IDBTransaction {
         open_request_id: Option<Uuid>,
         can_gc: CanGc,
     ) -> DomRoot<IDBTransaction> {
-        reflect_dom_object(
+        let transaction = reflect_dom_object(
             Box::new(IDBTransaction::new_inherited(
                 connection,
                 mode,
@@ -135,7 +137,9 @@ impl IDBTransaction {
             )),
             global,
             can_gc,
-        )
+        );
+        global.register_idb_transaction(&transaction);
+        transaction
     }
 
     // Registers a new transaction in the idb thread, and gets an unique serial number in return.
