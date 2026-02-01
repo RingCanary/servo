@@ -137,7 +137,9 @@ struct DocumentTree {
 
 impl DocumentTree {
     fn new(documents: &DocumentCollection) -> Self {
-        let mut tree = DocumentTree::default();
+        let mut tree = DocumentTree {
+            tree: FxHashMap::with_capacity_and_hasher(documents.map.0.len(), Default::default()),
+        };
         for (id, document) in documents.iter() {
             let children: Vec<PipelineId> = document
                 .iframes()
@@ -154,7 +156,7 @@ impl DocumentTree {
     }
 
     fn documents_in_order(&self) -> Vec<PipelineId> {
-        let mut list = Vec::new();
+        let mut list = Vec::with_capacity(self.tree.len());
         for (id, node) in self.tree.iter() {
             if node.parent.is_none() {
                 self.process_node_for_documents_in_order(*id, &mut list);
