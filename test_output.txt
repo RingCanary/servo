@@ -1,0 +1,587 @@
+    Blocking waiting for file lock on build directory
+   Compiling unicode-ident v1.0.22
+   Compiling cfg-if v1.0.4
+   Compiling libc v0.2.180
+   Compiling serde_core v1.0.228
+   Compiling log v0.4.29
+   Compiling proc-macro2 v1.0.106
+   Compiling memchr v2.7.6
+   Compiling quote v1.0.44
+   Compiling once_cell v1.21.3
+   Compiling syn v2.0.114
+   Compiling libm v0.2.15
+   Compiling getrandom v0.2.17
+   Compiling rand_core v0.6.4
+   Compiling typenum v1.19.0
+   Compiling bitflags v2.10.0
+   Compiling equivalent v1.0.2
+   Compiling num-traits v0.2.19
+   Compiling subtle v2.6.1
+   Compiling pin-project-lite v0.2.16
+   Compiling crossbeam-utils v0.8.21
+   Compiling synstructure v0.13.2
+   Compiling serde_derive v1.0.228
+   Compiling zeroize_derive v1.4.3
+   Compiling linux-raw-sys v0.11.0
+   Compiling itoa v1.0.17
+   Compiling zeroize v1.8.2
+   Compiling fnv v1.0.7
+   Compiling generic-array v0.14.7
+   Compiling getrandom v0.3.4
+   Compiling bytemuck_derive v1.10.2
+   Compiling crypto-common v0.1.7
+   Compiling const-oid v0.9.6
+   Compiling rustix v1.1.2
+   Compiling bytemuck v1.24.0
+   Compiling siphasher v1.0.1
+   Compiling stable_deref_trait v1.2.1
+   Compiling block-buffer v0.10.4
+   Compiling phf_shared v0.13.1
+   Compiling digest v0.10.7
+   Compiling phf_generator v0.13.1
+   Compiling cpufeatures v0.2.17
+   Compiling adler2 v2.0.1
+   Compiling bytes v1.11.0
+   Compiling zerofrom-derive v0.1.6
+   Compiling serde v1.0.228
+   Compiling yoke-derive v0.7.5
+   Compiling smallvec v1.15.1
+   Compiling arrayvec v0.7.6
+   Compiling zerofrom v0.1.6
+   Compiling core_maths v0.1.1
+   Compiling fastrand v2.3.0
+   Compiling scopeguard v1.2.0
+   Compiling lock_api v0.4.14
+   Compiling yoke v0.7.5
+   Compiling parking_lot_core v0.9.12
+   Compiling displaydoc v0.2.5
+   Compiling zerovec-derive v0.10.3
+   Compiling futures-core v0.3.31
+   Compiling parking_lot v0.12.5
+   Compiling crc32fast v1.5.0
+   Compiling mio v1.1.1
+   Compiling sha1_smol v1.0.1
+   Compiling zerovec v0.10.4
+   Compiling simd-adler32 v0.3.8
+   Compiling uuid v1.20.0
+   Compiling euclid v0.22.13
+   Compiling litemap v0.7.5
+   Compiling slab v0.4.11
+   Compiling tinystr v0.7.6
+   Compiling new_debug_unreachable v1.0.6
+   Compiling writeable v0.5.5
+   Compiling miniz_oxide v0.8.9
+   Compiling allocator-api2 v0.2.21
+   Compiling icu_provider_macros v1.5.0
+   Compiling icu_locid v1.5.0
+   Compiling icu_locid_transform_data v1.5.1
+   Compiling phf_codegen v0.13.1
+   Compiling libloading v0.8.9
+   Compiling hashbrown v0.16.0
+   Compiling percent-encoding v2.3.2
+   Compiling icu_provider v1.5.0
+   Compiling flate2 v1.1.8
+   Compiling tokio-macros v2.6.0
+   Compiling icu_locid_transform v1.5.0
+   Compiling socket2 v0.6.1
+   Compiling unicode-bidi v0.3.18
+   Compiling rustc-hash v2.1.1
+   Compiling tokio v1.49.0
+   Compiling indexmap v2.11.4
+   Compiling icu_collections v1.5.0
+   Compiling ttf-parser v0.25.1
+   Compiling either v1.15.0
+   Compiling icu_properties_data v1.5.1
+   Compiling crossbeam-epoch v0.9.18
+   Compiling num-integer v0.1.46
+   Compiling futures-io v0.3.31
+   Compiling utf8_iter v1.0.4
+   Compiling darling_core v0.20.11
+   Compiling crossbeam-deque v0.8.6
+   Compiling icu_properties v1.5.1
+   Compiling fdeflate v0.3.7
+   Compiling phf_macros v0.13.1
+   Compiling bitflags v1.3.2
+   Compiling precomputed-hash v0.1.1
+   Compiling string_cache v0.9.0
+   Compiling png v0.17.16
+   Compiling darling_macro v0.20.11
+   Compiling rayon-core v1.13.0
+   Compiling phf v0.13.1
+   Compiling http v1.4.0
+   Compiling string_cache_codegen v0.6.1
+   Compiling rayon v1.11.0
+   Compiling darling v0.20.11
+   Compiling encoding_rs v0.8.35
+   Compiling memmap2 v0.9.9
+   Compiling base64 v0.22.1
+   Compiling float-cmp v0.9.0
+   Compiling static_assertions v1.1.0
+   Compiling strict-num v0.1.1
+   Compiling icu_normalizer_data v1.5.1
+   Compiling utf16_iter v1.0.5
+   Compiling write16 v1.0.0
+   Compiling arrayref v0.3.9
+   Compiling icu_normalizer v1.5.0
+   Compiling tiny-skia-path v0.11.4
+   Compiling form_urlencoded v1.2.2
+   Compiling app_units v0.7.8
+   Compiling crossbeam-channel v0.5.15
+   Compiling dtoa v1.0.11
+   Compiling idna_adapter v1.2.0
+   Compiling dtoa-short v0.3.5
+   Compiling derive_more-impl v2.1.1
+   Compiling cssparser-macros v0.6.1
+   Compiling num-derive v0.4.2
+   Compiling quick-error v2.0.1
+   Compiling mime v0.3.17
+   Compiling cssparser v0.36.0
+   Compiling idna v1.1.0
+   Compiling icu_segmenter_data v1.5.1
+   Compiling tiny-skia v0.11.4
+   Compiling web_atoms v0.2.3
+   Compiling derive_more v2.1.1
+   Compiling selectors v0.35.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling bincode v1.3.3
+   Compiling servo_arc v0.4.3 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling rgb v0.8.52
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing-core v0.1.36
+   Compiling aho-corasick v1.1.4
+   Compiling weezl v0.1.12
+   Compiling zune-core v0.4.12
+   Compiling color_quant v1.1.0
+   Compiling regex-syntax v0.8.8
+   Compiling smallbitvec v2.6.0
+   Compiling utf-8 v0.7.6
+   Compiling byteorder-lite v0.1.0
+   Compiling thin-vec v0.2.14
+   Compiling spin v0.9.8
+   Compiling to_shmem v0.3.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling lazy_static v1.5.0
+   Compiling image-webp v0.2.4
+   Compiling zune-jpeg v0.4.21
+   Compiling gif v0.13.3
+   Compiling tracing v0.1.44
+   Compiling regex-automata v0.4.13
+   Compiling icu_segmenter v1.5.0
+   Compiling url v2.5.8
+   Compiling to_shmem_derive v0.1.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling tempfile v3.23.0
+   Compiling sha2 v0.10.9
+   Compiling malloc_size_of_derive v0.1.3
+   Compiling futures-sink v0.3.31
+   Compiling unicode-segmentation v1.12.0
+   Compiling ipc-channel v0.20.2
+   Compiling regex v1.12.2
+   Compiling freetype-sys v0.20.1
+   Compiling stylo_atoms v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling peek-poke-derive v0.3.0 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+   Compiling thiserror-impl v1.0.69
+   Compiling serde_bytes v0.11.19
+   Compiling num_cpus v1.17.0
+   Compiling byteorder v1.5.0
+   Compiling roxmltree v0.20.0
+   Compiling void v1.0.2
+   Compiling tinyvec_macros v0.1.1
+   Compiling stylo_malloc_size_of v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling tinyvec v1.10.0
+   Compiling build-parallel v0.1.2
+   Compiling peek-poke v0.3.0 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+   Compiling fontconfig-parser v0.5.8
+   Compiling slotmap v1.1.1
+   Compiling thiserror v1.0.69
+   Compiling tendril v0.5.0
+   Compiling wr_malloc_size_of v0.2.2 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+   Compiling webrender_build v0.0.2 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+   Compiling kurbo v0.11.3
+   Compiling zeitstempel v0.1.2
+   Compiling atomic-waker v1.1.2
+   Compiling unicode-bidi-mirroring v0.4.0
+   Compiling gimli v0.32.3
+   Compiling unic-common v0.9.0
+   Compiling unicode-properties v0.1.4
+   Compiling unicode-script v0.5.8
+   Compiling unic-char-range v0.9.0
+   Compiling unicode-ccc v0.4.0
+   Compiling unic-char-property v0.9.0
+   Compiling rustybuzz v0.20.1
+   Compiling svgtypes v0.15.3
+   Compiling webrender v0.68.0 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+   Compiling unic-ucd-version v0.9.0
+   Compiling webrender_api v0.68.0 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+   Compiling markup5ever v0.38.0
+   Compiling addr2line v0.25.1
+   Compiling fontdb v0.23.0
+   Compiling tikv-jemalloc-sys v0.6.1+5.3.0-1-ge13ca993e8ccb9ba9847cc330696e02839f328f7
+   Compiling zmij v1.0.16
+   Compiling object v0.37.3
+   Compiling freetype v0.7.2
+   Compiling futures-channel v0.3.31
+   Compiling itertools v0.14.0
+   Compiling simplecss v0.2.2
+   Compiling rustc-demangle v0.1.27
+   Compiling pico-args v0.5.0
+   Compiling scoped-tls v1.0.1
+   Compiling imagesize v0.13.0
+   Compiling tracy-rs v0.1.2
+   Compiling xmlwriter v0.1.0
+   Compiling pin-utils v0.1.0
+   Compiling data-url v0.3.2
+   Compiling svg_fmt v0.4.5
+   Compiling unicode-vo v0.1.0
+   Compiling usvg v0.45.1
+   Compiling etagere v0.2.15
+   Compiling backtrace v0.3.76
+   Compiling wr_glyph_rasterizer v0.1.0 (https://github.com/servo/webrender?rev=6cafc606096db4715a6119a6e16391aed9af47a5#6cafc606)
+   Compiling tikv-jemallocator v0.6.1
+   Compiling stylo_traits v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling gleam v0.15.1
+   Compiling unic-ucd-ident v0.9.0
+   Compiling stylo_dom v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling ron v0.10.1
+   Compiling stylo_derive v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling plane-split v0.18.0
+   Compiling uluru v3.1.0
+   Compiling zerocopy-derive v0.8.33
+   Compiling stylo_static_prefs v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling atomic_refcell v0.1.13
+   Compiling stylo_config v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling topological-sort v0.1.0
+   Compiling grid v1.0.0
+   Compiling stylo v0.11.0 (https://github.com/servo/stylo?rev=44bf70c4215dde5997aa835081d7320c1f533c95#44bf70c4)
+   Compiling taffy v0.9.2
+   Compiling urlpattern v0.3.0
+   Compiling zerocopy v0.8.33
+   Compiling servo_allocator v0.0.1 (/app/components/allocator)
+   Compiling resvg v0.45.1
+   Compiling accountable-refcell v0.2.2
+   Compiling content-security-policy v0.6.0
+   Compiling keyboard-types v0.8.3
+   Compiling profiling-procmacros v1.0.17
+   Compiling futures-macro v0.3.31
+   Compiling time-core v0.1.7
+   Compiling futures-task v0.3.31
+   Compiling num-conv v0.1.0
+   Compiling powerfmt v0.2.0
+   Compiling deranged v0.5.5
+   Compiling futures-util v0.3.31
+   Compiling time-macros v0.2.25
+   Compiling profiling v1.0.17
+   Compiling num_threads v0.1.7
+   Compiling serde_json v1.0.149
+   Compiling time v0.3.45
+   Compiling dlib v0.5.2
+   Compiling equator-macro v0.4.2
+   Compiling nom v8.0.0
+   Compiling equator v0.4.2
+   Compiling aligned-vec v0.6.4
+   Compiling num-bigint v0.4.6
+   Compiling servo_config_macro v0.0.1 (/app/components/config/macro)
+   Compiling wayland-sys v0.31.8
+   Compiling v_frame v0.3.9
+   Compiling num-rational v0.4.2
+   Compiling anyhow v1.0.100
+   Compiling httparse v1.10.1
+   Compiling tokio-util v0.7.18
+   Compiling enumn v0.1.14
+   Compiling av1-grain v0.2.5
+   Compiling accesskit v0.21.1
+   Compiling maybe-rayon v0.1.1
+   Compiling itertools v0.12.1
+   Compiling sha1 v0.10.6
+   Compiling arg_enum_proc_macro v0.3.4
+   Compiling simd_helpers v0.1.0
+   Compiling bitstream-io v2.6.0
+   Compiling imgref v1.12.0
+   Compiling try-lock v0.2.5
+   Compiling want v0.3.1
+   Compiling loop9 v0.1.5
+   Compiling avif-serialize v0.8.6
+   Compiling http v0.2.12
+   Compiling rav1e v0.7.1
+   Compiling httpdate v1.0.3
+   Compiling tower-service v0.3.3
+   Compiling http-body v1.0.1
+   Compiling unicase v2.9.0
+   Compiling mime_guess v2.0.5
+   Compiling h2 v0.4.12
+   Compiling http-body v0.4.6
+   Compiling headers-core v0.2.0
+   Compiling h2 v0.3.27
+   Compiling ravif v0.11.20
+   Compiling hyper v1.8.1
+   Compiling image v0.25.6
+   Compiling pin-project-internal v1.1.10
+   Compiling socket2 v0.5.10
+   Compiling base64 v0.21.7
+   Compiling ryu v1.0.22
+   Compiling serde_urlencoded v0.7.1
+   Compiling headers v0.3.9
+   Compiling hyper v0.14.32
+   Compiling pin-project v1.1.10
+   Compiling headers-core v0.3.0
+   Compiling foldhash v0.1.5
+   Compiling raw-window-handle v0.6.2
+   Compiling strum_macros v0.27.2
+   Compiling hashbrown v0.15.5
+   Compiling headers v0.4.1
+   Compiling cookie v0.18.1
+   Compiling warp v0.3.7
+   Compiling cookie v0.16.2
+   Compiling tokio-stream v0.1.18
+   Compiling hyper_serde v0.13.2 (/app/components/hyper_serde)
+   Compiling strum v0.27.2
+   Compiling glow v0.16.0
+   Compiling thiserror-impl v2.0.17
+   Compiling webdriver v0.53.0
+   Compiling x11-dl v2.21.0
+   Compiling winnow v0.7.14
+   Compiling ppv-lite86 v0.2.21
+   Compiling rustls-pki-types v1.14.0
+   Compiling dpi v0.1.2
+   Compiling toml_parser v1.0.6+spec-1.1.0
+   Compiling quick-xml v0.38.4
+   Compiling toml_edit v0.23.7
+   Compiling enumflags2_derive v0.7.12
+   Compiling dunce v1.0.5
+   Compiling proc-macro-crate v3.4.0
+   Compiling surfman v0.11.0 (/app/third_party/surfman)
+   Compiling thiserror v2.0.17
+   Compiling zvariant_utils v3.3.0
+   Compiling rand_core v0.9.3
+   Compiling parking v2.2.1
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/platform/unix/x11/connection.rs:279:32
+    |
+279 |     pub(crate) fn lock_display(&self) -> DisplayGuard {
+    |                                ^^^^^     ^^^^^^^^^^^^ the same lifetime is hidden here
+    |                                |
+    |                                the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+279 |     pub(crate) fn lock_display(&self) -> DisplayGuard<'_> {
+    |                                                      ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:484:13
+    |
+484 |     fn lock(&self) -> MutexGuard<SwapChainData<Device>> {
+    |             ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |             |
+    |             the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+484 |     fn lock(&self) -> MutexGuard<'_, SwapChainData<Device>> {
+    |                                  +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:679:12
+    |
+679 |     fn ids(&self) -> MutexGuard<FnvHashMap<ContextID, FnvHashSet<SwapChainID>>> {
+    |            ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |            |
+    |            the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+679 |     fn ids(&self) -> MutexGuard<'_, FnvHashMap<ContextID, FnvHashSet<SwapChainID>>> {
+    |                                 +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:684:14
+    |
+684 |     fn table(&self) -> RwLockReadGuard<FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |              ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |              |
+    |              the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+684 |     fn table(&self) -> RwLockReadGuard<'_, FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                                        +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:689:18
+    |
+689 |     fn table_mut(&self) -> RwLockWriteGuard<FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                  ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                  |
+    |                  the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+689 |     fn table_mut(&self) -> RwLockWriteGuard<'_, FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                                             +++
+
+   Compiling rand_chacha v0.9.0
+   Compiling aws-lc-sys v0.36.0
+   Compiling zvariant_derive v5.9.2
+warning: `surfman` (lib) generated 5 warnings (run `cargo fix --lib -p surfman` to apply 5 suggestions)
+   Compiling concurrent-queue v2.5.0
+   Compiling endi v1.1.1
+   Compiling rand v0.9.2
+   Compiling polling v3.11.0
+   Compiling base64ct v1.8.3
+   Compiling font-types v0.10.1
+   Compiling ipnet v2.11.0
+   Compiling read-fonts v0.35.0
+   Compiling hyper-util v0.1.19
+   Compiling pem-rfc7468 v0.7.0
+   Compiling event-listener v5.4.1
+   Compiling enumflags2 v0.7.12
+   Compiling half v2.7.1
+   Compiling der_derive v0.7.3
+   Compiling bit-vec v0.8.0
+   Compiling unicode-width v0.2.2
+   Compiling alloc-no-stdlib v2.0.4
+   Compiling alloc-stdlib v0.2.2
+   Compiling codespan-reporting v0.12.0
+   Compiling bit-set v0.8.0
+   Compiling der v0.7.10
+   Compiling zvariant v5.9.2
+   Compiling event-listener-strategy v0.5.4
+   Compiling futures-lite v2.6.1
+   Compiling kurbo v0.12.0
+   Compiling gpu-descriptor-types v0.2.0
+   Compiling spirv v0.3.0+sdk-1.3.268.0
+   Compiling gpu-alloc-types v0.3.0
+   Compiling downcast-rs v1.2.1
+   Compiling hexf-parse v0.2.1
+   Compiling rustc-hash v1.1.0
+   Compiling naga v26.0.0
+   Compiling wayland-backend v0.3.12
+   Compiling gpu-alloc v0.6.0
+   Compiling gpu-descriptor v0.3.2
+   Compiling zbus_names v4.3.1
+   Compiling spki v0.7.3
+   Compiling ash v0.38.0+1.3.281
+   Compiling khronos-egl v6.0.0
+   Compiling brotli-decompressor v5.0.0
+   Compiling wgpu-types v26.0.0
+   Compiling servo-media-streams v0.1.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling ordered-float v5.0.0
+   Compiling nom v7.1.3
+   Compiling pkcs8 v0.10.2
+   Compiling wayland-scanner v0.31.8
+   Compiling wgpu-hal v26.0.6
+   Compiling block-padding v0.3.3
+   Compiling errno v0.3.14
+   Compiling fixedbitset v0.1.9
+   Compiling ordermap v0.3.5
+   Compiling servo-media-traits v0.1.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling async-task v4.7.1
+   Compiling petgraph v0.4.13
+   Compiling servo-media-player v0.1.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling signal-hook-registry v1.4.8
+   Compiling inout v0.1.4
+   Compiling wayland-client v0.31.12
+   Compiling async-io v2.6.0
+   Compiling wgpu-core-deps-windows-linux-android v26.0.0
+   Compiling num-complex v0.2.4
+   Compiling ahash v0.8.12
+   Compiling cexpr v0.6.0
+   Compiling clang-sys v1.8.1
+   Compiling async-channel v2.5.0
+   Compiling servo-media-derive v0.1.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling speexdsp-resampler v0.1.0
+   Compiling byte-slice-cast v1.2.3
+   Compiling untrusted v0.9.0
+   Compiling servo-media-audio v0.2.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling bindgen v0.72.1
+   Compiling wgpu-core v26.0.1
+   Compiling async-signal v0.2.13
+   Compiling cipher v0.4.4
+   Compiling servo-media-webrtc v0.1.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling zbus_xml v5.1.0
+   Compiling libz-sys v1.1.23
+   Compiling async-lock v3.4.2
+   Compiling piper v0.2.4
+   Compiling hmac v0.12.1
+   Compiling blocking v1.6.2
+   Compiling async-process v2.5.0
+   Compiling zbus-lockstep v0.5.2
+   Compiling servo-media v0.1.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling async-executor v1.13.3
+   Compiling zbus_macros v5.13.2
+   Compiling async-broadcast v0.7.2
+   Compiling ordered-stream v0.2.0
+   Compiling async-trait v0.1.89
+   Compiling serde_repr v0.1.20
+   Compiling ff v0.13.1
+   Compiling iana-time-zone v0.1.64
+   Compiling linux-raw-sys v0.4.15
+   Compiling hex v0.4.3
+   Compiling base16ct v0.2.0
+   Compiling zbus v5.13.2
+   Compiling sec1 v0.7.3
+   Compiling strck_ident v0.1.2
+   Compiling rustix v0.38.44
+   Compiling group v0.13.0
+   Compiling zbus-lockstep-macros v0.5.2
+   Compiling hkdf v0.12.4
+   Compiling wayland-protocols v0.32.10
+   Compiling skrifa v0.37.0
+   Compiling owned_ttf_parser v0.25.1
+   Compiling signature v2.2.0
+   Compiling crypto-bigint v0.5.5
+   Compiling filetime v0.2.27
+   Compiling ab_glyph_rasterizer v0.1.10
+   Compiling ab_glyph v0.2.32
+   Compiling diplomat_core v0.8.1
+   Compiling elliptic-curve v0.13.8
+   Compiling tar v0.4.44
+   Compiling atspi-common v0.9.0
+   Compiling calloop v0.13.0
+   Compiling icu_calendar_data v1.5.1
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+   Compiling fontsan-woff2 v0.1.1
+   Compiling brotli v8.0.2
+   Compiling calendrical_calculations v0.1.3
+   Compiling universal-hash v0.5.1
+   Compiling servo-tracing v0.0.1 (/app/components/servo_tracing)
+   Compiling opaque-debug v0.3.1
+   Compiling xcursor v0.3.10
+   Compiling xkeysym v0.2.1
+   Compiling cursor-icon v1.2.0
+   Compiling wayland-csd-frame v0.3.0
+   Compiling wayland-cursor v0.31.12
+   Compiling icu_calendar v1.5.2
+   Compiling calloop-wayland-source v0.3.0
+   Compiling fontsan v0.6.1
+   Compiling zstd-safe v7.2.4
+   Compiling mozjs_sys v0.140.5-10
+   Compiling yeslogic-fontconfig-sys v6.0.0
+   Compiling harfbuzz-sys v0.6.1
+   Compiling diplomat v0.8.0
+   Compiling wayland-protocols-wlr v0.3.10
+   Compiling rfc6979 v0.4.0
+   Compiling icu_provider_adapters v1.5.0
+   Compiling gethostname v1.1.0
+   Compiling aws-lc-rs v1.15.3
+   Compiling rustls v0.23.36
+   Compiling as-raw-xcb-connection v1.0.1
+   Compiling diplomat-runtime v0.8.3
+   Compiling x11rb-protocol v0.13.2
+   Compiling script_bindings v0.0.1 (/app/components/script_bindings)
+   Compiling smithay-client-toolkit v0.19.2
+   Compiling icu_capi v1.5.0
+   Compiling rustls-webpki v0.103.9
+   Compiling ecdsa v0.16.9
+   Compiling zstd v0.13.3
+   Compiling atspi-proxies v0.9.0
+   Compiling encoding_c v0.9.8
+   Compiling primeorder v0.13.6
+   Compiling encoding_c_mem v0.2.6
+   Compiling chrono v0.4.43
+   Compiling tokio-rustls v0.26.4
+   Compiling webpki-roots v1.0.5
+   Compiling rand_chacha v0.3.1

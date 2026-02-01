@@ -1,0 +1,170 @@
+    Blocking waiting for file lock on build directory
+    Checking servo_malloc_size_of v0.0.1 (/app/components/malloc_size_of)
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/platform/unix/x11/connection.rs:279:32
+    |
+279 |     pub(crate) fn lock_display(&self) -> DisplayGuard {
+    |                                ^^^^^     ^^^^^^^^^^^^ the same lifetime is hidden here
+    |                                |
+    |                                the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+279 |     pub(crate) fn lock_display(&self) -> DisplayGuard<'_> {
+    |                                                      ++++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:484:13
+    |
+484 |     fn lock(&self) -> MutexGuard<SwapChainData<Device>> {
+    |             ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |             |
+    |             the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+484 |     fn lock(&self) -> MutexGuard<'_, SwapChainData<Device>> {
+    |                                  +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:679:12
+    |
+679 |     fn ids(&self) -> MutexGuard<FnvHashMap<ContextID, FnvHashSet<SwapChainID>>> {
+    |            ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |            |
+    |            the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+679 |     fn ids(&self) -> MutexGuard<'_, FnvHashMap<ContextID, FnvHashSet<SwapChainID>>> {
+    |                                 +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:684:14
+    |
+684 |     fn table(&self) -> RwLockReadGuard<FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |              ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |              |
+    |              the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+684 |     fn table(&self) -> RwLockReadGuard<'_, FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                                        +++
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> third_party/surfman/src/chains.rs:689:18
+    |
+689 |     fn table_mut(&self) -> RwLockWriteGuard<FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                  ^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                  |
+    |                  the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+689 |     fn table_mut(&self) -> RwLockWriteGuard<'_, FnvHashMap<SwapChainID, SwapChain<Device>>> {
+    |                                             +++
+
+warning: `surfman` (lib) generated 5 warnings (run `cargo fix --lib -p surfman` to apply 5 suggestions)
+   Compiling mozangle v0.5.4
+   Compiling script v0.0.1 (/app/components/script)
+    Checking ml-kem v0.2.2
+   Compiling libudev-sys v0.1.4
+    Checking argon2 v0.5.3
+    Checking servo_url v0.0.1 (/app/components/url)
+    Checking servo_geometry v0.0.1 (/app/components/geometry)
+    Checking timers v0.0.1 (/app/components/timers)
+    Checking servo_config v0.0.1 (/app/components/config)
+    Checking xpath v0.0.1 (/app/components/xpath)
+    Checking nom-rfc8288 v0.4.0
+    Checking rsa v0.9.10
+    Checking chacha20poly1305 v0.10.1
+    Checking aes-gcm v0.10.3
+    Checking accesskit_unix v0.17.2
+    Checking vello_cpu v0.0.4
+    Checking base v0.0.1 (/app/components/shared/base)
+    Checking x25519-dalek v2.0.1
+   Compiling devtools v0.0.1 (/app/components/devtools)
+    Checking egui v0.33.3
+    Checking pixels v0.0.1 (/app/components/pixels)
+    Checking embedder_traits v0.0.1 (/app/components/shared/embedder)
+    Checking profile_traits v0.0.1 (/app/components/shared/profile)
+    Checking fonts_traits v0.0.1 (/app/components/shared/fonts)
+    Checking storage_traits v0.0.1 (/app/components/shared/storage)
+    Checking webgpu_traits v0.0.1 (/app/components/shared/webgpu)
+    Checking background_hang_monitor_api v0.0.1 (/app/components/shared/background_hang_monitor)
+    Checking aes-kw v0.2.1
+    Checking ocb3 v0.1.0
+    Checking p384 v0.13.1
+    Checking paint_api v0.0.1 (/app/components/shared/paint)
+    Checking webxr-api v0.0.1 (/app/components/shared/webxr)
+    Checking bluetooth_traits v0.0.1 (/app/components/shared/bluetooth)
+    Checking net_traits v0.0.1 (/app/components/shared/net)
+    Checking media v0.0.1 (/app/components/media)
+    Checking webgpu v0.0.1 (/app/components/webgpu)
+    Checking canvas_traits v0.0.1 (/app/components/shared/canvas)
+    Checking webxr v0.0.1 (/app/components/webxr)
+    Checking script_bindings v0.0.1 (/app/components/script_bindings)
+    Checking devtools_traits v0.0.1 (/app/components/shared/devtools)
+    Checking fonts v0.0.1 (/app/components/fonts)
+    Checking constellation_traits v0.0.1 (/app/components/shared/constellation)
+    Checking net v0.0.1 (/app/components/net)
+    Checking script_traits v0.0.1 (/app/components/shared/script)
+    Checking layout_api v0.0.1 (/app/components/shared/layout)
+    Checking metrics v0.0.1 (/app/components/metrics)
+    Checking p521 v0.13.3
+    Checking p256 v0.13.2
+    Checking arboard v3.6.1
+    Checking cbc v0.1.2
+    Checking chardetng v0.1.17
+   Compiling memoffset v0.9.1
+    Checking inotify-sys v0.1.5
+    Checking colorchoice v1.0.4
+    Checking anstyle-query v1.1.5
+    Checking anstyle v1.0.13
+    Checking is_terminal_polyfill v1.70.2
+    Checking swapper v0.1.0
+    Checking hex v0.3.2
+    Checking anstream v0.6.21
+    Checking inotify v0.11.0
+    Checking blurmock v0.1.3
+    Checking canvas v0.0.1 (/app/components/canvas)
+    Checking webgl v0.0.1 (/app/components/webgl)
+    Checking background_hang_monitor v0.0.1 (/app/components/background_hang_monitor)
+    Checking profile v0.0.1 (/app/components/profile)
+    Checking accesskit_winit v0.29.2
+    Checking sea-query-rusqlite v0.8.0-rc.15
+    Checking smithay-clipboard v0.7.2
+    Checking env_filter v0.1.4
+    Checking gaol v0.2.1
+   Compiling gilrs v0.11.1
+    Checking xi-unicode v0.3.0
+    Checking jiff v0.2.18
+   Compiling libservo v0.0.1 (/app/components/servo)
+    Checking vec_map v0.8.2
+    Checking web-time v1.1.0
+    Checking egui-winit v0.33.3
+    Checking gilrs-core v0.6.7
+    Checking constellation v0.0.1 (/app/components/constellation)
+    Checking storage v0.0.1 (/app/components/storage)
+    Checking env_logger v0.11.8
+    Checking paint v0.0.1 (/app/components/paint)
+    Checking bluetooth v0.0.1 (/app/components/bluetooth)
+    Checking directories v6.0.0
+    Checking servo-media-dummy v0.1.0 (https://github.com/servo/media?rev=f384dbc4ff8b5c6f8db2c763306cbe2281d66391#f384dbc4)
+   Compiling servoshell v0.0.4 (/app/ports/servoshell)
+    Checking sysinfo v0.37.2
+   Compiling bpaf_derive v0.5.21
+    Checking dunce v1.0.5
+    Checking egui-file-dialog v0.12.0
+    Checking egui_glow v0.33.3
+    Checking bpaf v0.9.22
+    Checking webdriver_server v0.0.1 (/app/components/webdriver_server)
+    Checking dirs v6.0.0
+    Checking sig v1.0.0
