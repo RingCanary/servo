@@ -59,6 +59,9 @@ pub struct Gui {
     ///
     /// These need to be cached across egui draw calls.
     favicon_textures: HashMap<WebViewId, (egui::TextureHandle, egui::load::SizedTexture)>,
+
+    /// Whether or not the toolbar is currently visible in fullscreen mode.
+    fullscreen_toolbar_visible: bool,
 }
 
 fn truncate_with_ellipsis(input: &str, max_length: usize) -> String {
@@ -124,6 +127,7 @@ impl Gui {
             can_go_back: false,
             can_go_forward: false,
             favicon_textures: Default::default(),
+            fullscreen_toolbar_visible: false,
         }
     }
 
@@ -280,184 +284,95 @@ impl Gui {
         context.run(winit_window, |ctx| {
             load_pending_favicons(ctx, window, favicon_textures);
 
-            // TODO: While in fullscreen add some way to mitigate the increased phishing risk
-            // when not displaying the URL bar: https://github.com/servo/servo/issues/32443
+            let shortcut_pressed = ctx.input(|i| {
+                if cfg!(target_os = "macos") {
+                    i.modifiers.command && i.key_pressed(Key::L)
+                } else {
+                    (i.modifiers.command && i.key_pressed(Key::L)) ||
+                        (i.modifiers.alt && i.key_pressed(Key::D))
+                }
+            });
+
+            if shortcut_pressed {
+                self.fullscreen_toolbar_visible = true;
+            }
+
             if winit_window.fullscreen().is_none() {
+                self.fullscreen_toolbar_visible = false;
                 let frame = egui::Frame::default()
                     .fill(ctx.style().visuals.window_fill)
                     .inner_margin(4.0);
                 TopBottomPanel::top("toolbar").frame(frame).show(ctx, |ui| {
-                    ui.allocate_ui_with_layout(
-                        ui.available_size(),
-                        egui::Layout::left_to_right(egui::Align::Center),
-                        |ui| {
-                            let back_button =
-                                ui.add_enabled(self.can_go_back, Gui::toolbar_button("⏴"));
-                            back_button.widget_info(|| {
-                                let mut info = WidgetInfo::new(WidgetType::Button);
-                                info.label = Some("Back".into());
-                                info
-                            });
-                            if back_button.clicked() {
-                                *location_dirty = false;
-                                window.queue_user_interface_command(UserInterfaceCommand::Back);
-                            }
-
-                            let forward_button =
-                                ui.add_enabled(self.can_go_forward, Gui::toolbar_button("⏵"));
-                            forward_button.widget_info(|| {
-                                let mut info = WidgetInfo::new(WidgetType::Button);
-                                info.label = Some("Forward".into());
-                                info
-                            });
-                            if forward_button.clicked() {
-                                *location_dirty = false;
-                                window.queue_user_interface_command(UserInterfaceCommand::Forward);
-                            }
-
-                            match self.load_status {
-                                LoadStatus::Started | LoadStatus::HeadParsed => {
-                                    let stop_button = ui.add(Gui::toolbar_button("X"));
-                                    stop_button.widget_info(|| {
-                                        let mut info = WidgetInfo::new(WidgetType::Button);
-                                        info.label = Some("Stop".into());
-                                        info
-                                    });
-                                    if stop_button.clicked() {
-                                        warn!("Do not support stop yet.");
-                                    }
-                                },
-                                LoadStatus::Complete => {
-                                    let reload_button = ui.add(Gui::toolbar_button("↻"));
-                                    reload_button.widget_info(|| {
-                                        let mut info = WidgetInfo::new(WidgetType::Button);
-                                        info.label = Some("Reload".into());
-                                        info
-                                    });
-                                    if reload_button.clicked() {
-                                        *location_dirty = false;
-                                        window.queue_user_interface_command(
-                                            UserInterfaceCommand::Reload,
-                                        );
-                                    }
-                                },
-                            }
-                            ui.add_space(2.0);
-
-                            ui.allocate_ui_with_layout(
-                                ui.available_size(),
-                                egui::Layout::right_to_left(egui::Align::Center),
-                                |ui| {
-                                    let mut experimental_preferences_enabled =
-                                        state.experimental_preferences_enabled();
-                                    let prefs_toggle = ui
-                                        .toggle_value(&mut experimental_preferences_enabled, "☢")
-                                        .on_hover_text("Enable experimental prefs");
-                                    prefs_toggle.widget_info(|| {
-                                        let mut info = WidgetInfo::new(WidgetType::Button);
-                                        info.label = Some("Enable experimental preferences".into());
-                                        info.selected = Some(experimental_preferences_enabled);
-                                        info
-                                    });
-                                    if prefs_toggle.clicked() {
-                                        state.set_experimental_preferences_enabled(
-                                            experimental_preferences_enabled,
-                                        );
-                                        *location_dirty = false;
-                                        window.queue_user_interface_command(
-                                            UserInterfaceCommand::ReloadAll,
-                                        );
-                                    }
-
-                                    let location_id = egui::Id::new("location_input");
-                                    let location_field = ui.add_sized(
-                                        ui.available_size(),
-                                        egui::TextEdit::singleline(location)
-                                            .id(location_id)
-                                            .hint_text("Search or enter address"),
-                                    );
-
-                                    if location_field.changed() {
-                                        *location_dirty = true;
-                                    }
-                                    // Handle adddress bar shortcut.
-                                    if ui.input(|i| {
-                                        if cfg!(target_os = "macos") {
-                                            i.clone().consume_key(Modifiers::COMMAND, Key::L)
-                                        } else {
-                                            i.clone().consume_key(Modifiers::COMMAND, Key::L) ||
-                                                i.clone().consume_key(Modifiers::ALT, Key::D)
-                                        }
-                                    }) {
-                                        // The focus request immediately makes gained_focus return true.
-                                        location_field.request_focus();
-                                    }
-                                    // Select address bar text when it's focused (click or shortcut).
-                                    if location_field.gained_focus() {
-                                        if let Some(mut state) =
-                                            TextEditState::load(ui.ctx(), location_id)
-                                        {
-                                            // Select the whole input.
-                                            state.cursor.set_char_range(Some(CCursorRange::two(
-                                                CCursor::new(0),
-                                                CCursor::new(location.len()),
-                                            )));
-                                            state.store(ui.ctx(), location_id);
-                                        }
-                                    }
-                                    // Navigate to address when enter is pressed in the address bar.
-                                    if location_field.lost_focus() &&
-                                        ui.input(|i| i.clone().key_pressed(Key::Enter))
-                                    {
-                                        window.queue_user_interface_command(
-                                            UserInterfaceCommand::Go(location.clone()),
-                                        );
-                                    }
-                                },
-                            );
-                        },
+                    draw_toolbar_contents(
+                        ui,
+                        window,
+                        state,
+                        location,
+                        location_dirty,
+                        self.load_status,
+                        self.can_go_back,
+                        self.can_go_forward,
+                        shortcut_pressed,
                     );
                 });
 
                 // A simple Tab header strip
                 TopBottomPanel::top("tabs").show(ctx, |ui| {
-                    ui.allocate_ui_with_layout(
-                        ui.available_size(),
-                        egui::Layout::left_to_right(egui::Align::Center),
-                        |ui| {
-                            for (id, webview) in window.webviews().into_iter() {
-                                let favicon = favicon_textures
-                                    .get(&id)
-                                    .map(|(_, favicon)| favicon)
-                                    .copied();
-                                Self::browser_tab(ui, window, webview, favicon);
-                            }
-
-                            let new_tab_button = ui.add(Gui::toolbar_button("+"));
-                            new_tab_button.widget_info(|| {
-                                let mut info = WidgetInfo::new(WidgetType::Button);
-                                info.label = Some("New tab".into());
-                                info
-                            });
-                            if new_tab_button.clicked() {
-                                window
-                                    .queue_user_interface_command(UserInterfaceCommand::NewWebView);
-                            }
-
-                            let new_window_button = ui.add(Gui::toolbar_button("⊞"));
-                            new_window_button.widget_info(|| {
-                                let mut info = WidgetInfo::new(WidgetType::Button);
-                                info.label = Some("New window".into());
-                                info
-                            });
-                            if new_window_button.clicked() {
-                                window
-                                    .queue_user_interface_command(UserInterfaceCommand::NewWindow);
-                            }
-                        },
-                    );
+                    draw_tabs_contents(ui, window, favicon_textures);
                 });
-            };
+            } else {
+                let mut should_show = self.fullscreen_toolbar_visible;
+                if let Some(pos) = ctx.input(|i| i.pointer.hover_pos()) {
+                    if pos.y < 10.0 {
+                        should_show = true;
+                    }
+                }
+
+                if should_show {
+                    let mut keep_open = false;
+                    egui::Area::new("fullscreen_toolbar")
+                        .fixed_pos(pos2(0.0, 0.0))
+                        .order(egui::Order::Foreground)
+                        .show(ctx, |ui| {
+                            let frame = egui::Frame::default()
+                                .fill(ctx.style().visuals.window_fill)
+                                .inner_margin(4.0)
+                                .stroke(ctx.style().visuals.widgets.noninteractive.bg_stroke);
+
+                            let response = frame.show(ui, |ui| {
+                                ui.set_width(ctx.screen_rect().width());
+                                draw_toolbar_contents(
+                                    ui,
+                                    window,
+                                    state,
+                                    location,
+                                    location_dirty,
+                                    self.load_status,
+                                    self.can_go_back,
+                                    self.can_go_forward,
+                                    shortcut_pressed,
+                                );
+                                ui.separator();
+                                draw_tabs_contents(ui, window, favicon_textures);
+                            });
+
+                            if let Some(pos) = ctx.input(|i| i.pointer.hover_pos()) {
+                                if response.response.rect.contains(pos) {
+                                    keep_open = true;
+                                }
+                                if pos.y < 10.0 {
+                                    keep_open = true;
+                                }
+                            }
+
+                            if ctx.memory(|m| m.focused().is_some()) {
+                                keep_open = true;
+                            }
+                        });
+
+                    self.fullscreen_toolbar_visible = keep_open;
+                }
+            }
 
             // The toolbar height is where the Context’s available rect starts.
             // For reasons that are unclear, the TopBottomPanel’s ui cursor exceeds this by one egui
@@ -620,6 +535,179 @@ impl Gui {
     pub(crate) fn notify_accessibility_tree_update(&mut self, _tree_update: accesskit::TreeUpdate) {
         // TODO(#41930): Forward this update to `self.context.egui_winit.accesskit`
     }
+}
+
+fn draw_toolbar_contents(
+    ui: &mut egui::Ui,
+    window: &ServoShellWindow,
+    state: &RunningAppState,
+    location: &mut String,
+    location_dirty: &mut bool,
+    load_status: LoadStatus,
+    can_go_back: bool,
+    can_go_forward: bool,
+    force_focus_location: bool,
+) {
+    ui.allocate_ui_with_layout(
+        ui.available_size(),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            let back_button = ui.add_enabled(can_go_back, Gui::toolbar_button("⏴"));
+            back_button.widget_info(|| {
+                let mut info = WidgetInfo::new(WidgetType::Button);
+                info.label = Some("Back".into());
+                info
+            });
+            if back_button.clicked() {
+                *location_dirty = false;
+                window.queue_user_interface_command(UserInterfaceCommand::Back);
+            }
+
+            let forward_button = ui.add_enabled(can_go_forward, Gui::toolbar_button("⏵"));
+            forward_button.widget_info(|| {
+                let mut info = WidgetInfo::new(WidgetType::Button);
+                info.label = Some("Forward".into());
+                info
+            });
+            if forward_button.clicked() {
+                *location_dirty = false;
+                window.queue_user_interface_command(UserInterfaceCommand::Forward);
+            }
+
+            match load_status {
+                LoadStatus::Started | LoadStatus::HeadParsed => {
+                    let stop_button = ui.add(Gui::toolbar_button("X"));
+                    stop_button.widget_info(|| {
+                        let mut info = WidgetInfo::new(WidgetType::Button);
+                        info.label = Some("Stop".into());
+                        info
+                    });
+                    if stop_button.clicked() {
+                        warn!("Do not support stop yet.");
+                    }
+                },
+                LoadStatus::Complete => {
+                    let reload_button = ui.add(Gui::toolbar_button("↻"));
+                    reload_button.widget_info(|| {
+                        let mut info = WidgetInfo::new(WidgetType::Button);
+                        info.label = Some("Reload".into());
+                        info
+                    });
+                    if reload_button.clicked() {
+                        *location_dirty = false;
+                        window.queue_user_interface_command(UserInterfaceCommand::Reload);
+                    }
+                },
+            }
+            ui.add_space(2.0);
+
+            ui.allocate_ui_with_layout(
+                ui.available_size(),
+                egui::Layout::right_to_left(egui::Align::Center),
+                |ui| {
+                    let mut experimental_preferences_enabled =
+                        state.experimental_preferences_enabled();
+                    let prefs_toggle = ui
+                        .toggle_value(&mut experimental_preferences_enabled, "☢")
+                        .on_hover_text("Enable experimental prefs");
+                    prefs_toggle.widget_info(|| {
+                        let mut info = WidgetInfo::new(WidgetType::Button);
+                        info.label = Some("Enable experimental preferences".into());
+                        info.selected = Some(experimental_preferences_enabled);
+                        info
+                    });
+                    if prefs_toggle.clicked() {
+                        state.set_experimental_preferences_enabled(experimental_preferences_enabled);
+                        *location_dirty = false;
+                        window.queue_user_interface_command(UserInterfaceCommand::ReloadAll);
+                    }
+
+                    let location_id = egui::Id::new("location_input");
+                    let location_field = ui.add_sized(
+                        ui.available_size(),
+                        egui::TextEdit::singleline(location)
+                            .id(location_id)
+                            .hint_text("Search or enter address"),
+                    );
+
+                    if location_field.changed() {
+                        *location_dirty = true;
+                    }
+                    // Handle adddress bar shortcut.
+                    let shortcut_pressed = ui.input(|i| {
+                        if cfg!(target_os = "macos") {
+                            i.clone().consume_key(Modifiers::COMMAND, Key::L)
+                        } else {
+                            i.clone().consume_key(Modifiers::COMMAND, Key::L) ||
+                                i.clone().consume_key(Modifiers::ALT, Key::D)
+                        }
+                    });
+
+                    if shortcut_pressed || force_focus_location {
+                        // The focus request immediately makes gained_focus return true.
+                        location_field.request_focus();
+                    }
+                    // Select address bar text when it's focused (click or shortcut).
+                    if location_field.gained_focus() {
+                        if let Some(mut state) = TextEditState::load(ui.ctx(), location_id) {
+                            // Select the whole input.
+                            state.cursor.set_char_range(Some(CCursorRange::two(
+                                CCursor::new(0),
+                                CCursor::new(location.len()),
+                            )));
+                            state.store(ui.ctx(), location_id);
+                        }
+                    }
+                    // Navigate to address when enter is pressed in the address bar.
+                    if location_field.lost_focus() &&
+                        ui.input(|i| i.clone().key_pressed(Key::Enter))
+                    {
+                        window.queue_user_interface_command(UserInterfaceCommand::Go(location.clone()));
+                    }
+                },
+            );
+        },
+    );
+}
+
+fn draw_tabs_contents(
+    ui: &mut egui::Ui,
+    window: &ServoShellWindow,
+    favicon_textures: &HashMap<WebViewId, (egui::TextureHandle, egui::load::SizedTexture)>,
+) {
+    ui.allocate_ui_with_layout(
+        ui.available_size(),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            for (id, webview) in window.webviews().into_iter() {
+                let favicon = favicon_textures
+                    .get(&id)
+                    .map(|(_, favicon)| favicon)
+                    .copied();
+                Gui::browser_tab(ui, window, webview, favicon);
+            }
+
+            let new_tab_button = ui.add(Gui::toolbar_button("+"));
+            new_tab_button.widget_info(|| {
+                let mut info = WidgetInfo::new(WidgetType::Button);
+                info.label = Some("New tab".into());
+                info
+            });
+            if new_tab_button.clicked() {
+                window.queue_user_interface_command(UserInterfaceCommand::NewWebView);
+            }
+
+            let new_window_button = ui.add(Gui::toolbar_button("⊞"));
+            new_window_button.widget_info(|| {
+                let mut info = WidgetInfo::new(WidgetType::Button);
+                info.label = Some("New window".into());
+                info
+            });
+            if new_window_button.clicked() {
+                window.queue_user_interface_command(UserInterfaceCommand::NewWindow);
+            }
+        },
+    );
 }
 
 fn embedder_image_to_egui_image(image: &Image) -> egui::ColorImage {
