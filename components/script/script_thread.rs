@@ -2891,6 +2891,8 @@ impl ScriptThread {
                 // will be discarded.
                 None,
             );
+        } else if let Some(proxy) = self.window_proxies.get(browsing_context_id) {
+            proxy.unset_currently_active(can_gc);
         }
     }
 
