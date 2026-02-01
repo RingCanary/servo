@@ -493,7 +493,7 @@ pub(crate) struct Document {
     script_and_layout_blockers: Cell<u32>,
     /// List of tasks to execute as soon as last script/layout blocker is removed.
     #[ignore_malloc_size_of = "Measuring trait objects is hard"]
-    delayed_tasks: DomRefCell<Vec<Box<dyn NonSendTaskBox>>>,
+    delayed_tasks: DomRefCell<VecDeque<Box<dyn NonSendTaskBox>>>,
     /// <https://html.spec.whatwg.org/multipage/#completely-loaded>
     completely_loaded: Cell<bool>,
     /// Set of shadow roots connected to the document tree.
@@ -3954,7 +3954,7 @@ impl Document {
             .set(self.script_and_layout_blockers.get() - 1);
         while self.script_and_layout_blockers.get() == 0 && !self.delayed_tasks.borrow().is_empty()
         {
-            let task = self.delayed_tasks.borrow_mut().remove(0);
+            let task = self.delayed_tasks.borrow_mut().pop_front().unwrap();
             let mut cx = unsafe { script_bindings::script_runtime::temp_cx() };
             task.run_box(&mut cx);
         }
@@ -3962,7 +3962,7 @@ impl Document {
 
     /// Enqueue a task to run as soon as any JS and layout blockers are removed.
     pub(crate) fn add_delayed_task<T: 'static + NonSendTaskBox>(&self, task: T) {
-        self.delayed_tasks.borrow_mut().push(Box::new(task));
+        self.delayed_tasks.borrow_mut().push_back(Box::new(task));
     }
 
     /// Assert that the DOM is in a state that will allow running content JS or
