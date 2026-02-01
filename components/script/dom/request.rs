@@ -147,8 +147,7 @@ impl Request {
         }
 
         // Step 7. Let origin be this’s relevant settings object’s origin.
-        // TODO: `entry settings object` is not implemented yet.
-        let origin = base_url.origin();
+        let origin = GlobalScope::entry().origin().immutable().clone();
 
         // Step 8. Let traversableForUserPrompts be "client".
         let mut traversable_for_user_prompts = TraversableForUserPrompts::Client;
