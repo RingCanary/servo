@@ -3131,6 +3131,7 @@ impl Window {
         &self,
         url: ServoUrl,
         pipeline_id: PipelineId,
+        exceptions_enabled: bool,
     ) -> LoadData {
         let source_document = self.Document();
         let secure_context = if self.is_top_level() {
@@ -3148,6 +3149,7 @@ impl Window {
             Some(source_document.insecure_requests_policy()),
             source_document.has_trustworthy_ancestor_origin(),
             source_document.creation_sandboxing_flag_set_considering_parent_iframe(),
+            exceptions_enabled,
         )
     }
 

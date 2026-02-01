@@ -281,6 +281,7 @@ impl HTMLIFrameElement {
                 Some(document.insecure_requests_policy()),
                 document.has_trustworthy_ancestor_or_current_origin(),
                 self.sandboxing_flag_set(),
+            false,
             );
             load_data.destination = Destination::IFrame;
             load_data.policy_container = Some(window.as_global_scope().policy_container());
@@ -377,6 +378,7 @@ impl HTMLIFrameElement {
             Some(document.insecure_requests_policy()),
             document.has_trustworthy_ancestor_or_current_origin(),
             self.sandboxing_flag_set(),
+            false,
         );
         load_data.destination = Destination::IFrame;
         load_data.policy_container = Some(window.as_global_scope().policy_container());
@@ -421,6 +423,7 @@ impl HTMLIFrameElement {
             Some(document.insecure_requests_policy()),
             document.has_trustworthy_ancestor_or_current_origin(),
             self.sandboxing_flag_set(),
+            false,
         );
         load_data.destination = Destination::IFrame;
         load_data.policy_container = Some(window.as_global_scope().policy_container());
