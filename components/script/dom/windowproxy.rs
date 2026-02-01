@@ -326,6 +326,7 @@ impl WindowProxy {
             false,
             // There are no sandboxing restrictions when creating auxiliary browsing contexts.
             SandboxingFlagSet::empty(),
+            false,
         );
         let load_info = AuxiliaryWebViewCreationRequest {
             load_data: load_data.clone(),
@@ -556,7 +557,7 @@ impl WindowProxy {
 
             // Step 15.5 Otherwise, navigate targetNavigable to urlRecord using sourceDocument,
             // with referrerPolicy set to referrerPolicy and exceptionsEnabled set to true.
-            // FIXME: referrerPolicy may not be used properly here. exceptionsEnabled not used.
+            // FIXME: referrerPolicy may not be used properly here.
             let mut load_data = LoadData::new(
                 LoadOrigin::Script(existing_document.origin().snapshot()),
                 url,
@@ -567,6 +568,7 @@ impl WindowProxy {
                 Some(target_document.insecure_requests_policy()),
                 has_trustworthy_ancestor_origin,
                 target_document.creation_sandboxing_flag_set_considering_parent_iframe(),
+                true,
             );
 
             // Handle javascript: URLs specially to report CSP violations to the source window

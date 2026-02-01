@@ -131,6 +131,8 @@ pub struct LoadData {
     /// If this is a load operation for an `<iframe>` whose origin is same-origin with its
     /// container documents origin then this is the encoding of the container document.
     pub container_document_encoding: Option<&'static Encoding>,
+    /// Whether to rethrow exceptions during navigation.
+    pub exceptions_enabled: bool,
 }
 
 /// The result of evaluating a javascript scheme url.
@@ -156,6 +158,7 @@ impl LoadData {
         inherited_insecure_requests_policy: Option<InsecureRequestsPolicy>,
         has_trustworthy_ancestor_origin: bool,
         creation_sandboxing_flag_set: SandboxingFlagSet,
+        exceptions_enabled: bool,
     ) -> Self {
         Self {
             load_origin,
@@ -176,6 +179,7 @@ impl LoadData {
             destination: Destination::Document,
             creation_sandboxing_flag_set,
             container_document_encoding: None,
+            exceptions_enabled,
         }
     }
 
@@ -192,6 +196,7 @@ impl LoadData {
             None,
             false,
             SandboxingFlagSet::empty(),
+            false,
         )
     }
 }

@@ -69,7 +69,7 @@ impl Location {
         let incumbent_global = GlobalScope::incumbent().expect("no incumbent global object");
         let load_data = incumbent_global
             .as_window()
-            .load_data_for_document(url, navigable.pipeline_id());
+            .load_data_for_document(url, navigable.pipeline_id(), true);
         // Step 3. If location's relevant Document is not yet completely loaded,
         // and the incumbent global object does not have transient activation, then set historyHandling to "replace".
         //
@@ -139,7 +139,6 @@ impl Location {
         };
 
         // Initiate navigation
-        // TODO: rethrow exceptions, set exceptions enabled flag.
         let load_data = LoadData::new(
             LoadOrigin::Script(load_origin),
             url,
@@ -150,6 +149,7 @@ impl Location {
             Some(source_document.insecure_requests_policy()),
             source_document.has_trustworthy_ancestor_origin(),
             source_document.creation_sandboxing_flag_set_considering_parent_iframe(),
+            true,
         );
         self.window
             .load_url(history_handling, reload_triggered, load_data, can_gc);
