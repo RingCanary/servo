@@ -27,6 +27,7 @@ use harfbuzz_sys::{
 };
 use num_traits::Zero;
 use read_fonts::types::Tag;
+use smallvec::SmallVec;
 
 use super::{HarfBuzzShapedGlyphData, ShapedGlyphEntry, unicode_script_to_iso15924_tag};
 use crate::platform::font::FontTable;
@@ -233,7 +234,7 @@ impl Shaper {
                 text.len() as c_int,
             );
 
-            let mut features = Vec::new();
+            let mut features: SmallVec<[hb_feature_t; 2]> = SmallVec::new();
             if options
                 .flags
                 .contains(ShapingFlags::IGNORE_LIGATURES_SHAPING_FLAG)
