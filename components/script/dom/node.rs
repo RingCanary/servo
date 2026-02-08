@@ -4568,6 +4568,40 @@ pub(crate) trait VecPreOrderInsertionHelper<T> {
     fn insert_pre_order(&mut self, elem: &T, tree_root: &Node);
 }
 
+/// Helper to efficiently check if `a` is before `b` among siblings without full index calculation.
+/// Assumes `a` and `b` share the same parent.
+fn is_before_sibling(a: &Node, b: &Node) -> bool {
+    debug_assert!(a.GetParentNode() == b.GetParentNode());
+    if a == b {
+        return false; // strictly before
+    }
+
+    // Interleaved walk to find which comes first.
+    let mut next_a = a.GetNextSibling();
+    let mut next_b = b.GetNextSibling();
+
+    loop {
+        if next_a.is_none() && next_b.is_none() {
+            // Should not be reachable if a != b and both are children of same parent
+            return false;
+        }
+
+        if let Some(ref na) = next_a {
+            if &**na == b {
+                return true; // a found b, so a is before b
+            }
+            next_a = na.GetNextSibling();
+        }
+
+        if let Some(ref nb) = next_b {
+            if &**nb == a {
+                return false; // b found a, so b is before a (a is not before b)
+            }
+            next_b = nb.GetNextSibling();
+        }
+    }
+}
+
 impl<T> VecPreOrderInsertionHelper<T> for Vec<Dom<T>>
 where
     T: DerivedFrom<Node> + DomObject,
@@ -4577,27 +4611,42 @@ where
     /// * any time an element is removed from the tree root, it is also removed from this array
     /// * any time an element is moved within the tree, it is removed from this array and re-inserted
     ///
-    /// Under these assumptions, an element's tree-order position in this array can be determined by
-    /// performing a [preorder traversal](https://dom.spec.whatwg.org/#concept-tree-order) of the tree root's children,
-    /// and increasing the destination index in the array every time a node in the array is encountered during
-    /// the traversal.
-    fn insert_pre_order(&mut self, elem: &T, tree_root: &Node) {
+    /// Under these assumptions, we can use the relative document position of nodes to determine
+    /// the correct insertion point, which is significantly faster than traversing the entire tree.
+    fn insert_pre_order(&mut self, elem: &T, _tree_root: &Node) {
         if self.is_empty() {
             self.push(Dom::from_ref(elem));
             return;
         }
 
         let elem_node = elem.upcast::<Node>();
-        let mut head: usize = 0;
-        for node in tree_root.traverse_preorder(ShadowIncluding::No) {
-            let head_node = DomRoot::upcast::<Node>(DomRoot::from_ref(&*self[head]));
-            if head_node == node {
-                head += 1;
-            }
-            if elem_node == &*node || head == self.len() {
-                break;
-            }
+
+        // Optimization: Check if we are appending at the end (very common case during parsing/construction).
+        // We handle the sibling case specifically because it's fast and common.
+        let last_node = self.last().map(|d| d.upcast::<Node>()).unwrap();
+        let is_last_before = if last_node.GetParentNode() == elem_node.GetParentNode() {
+            is_before_sibling(last_node, elem_node)
+        } else {
+            last_node.is_before(elem_node)
+        };
+
+        if is_last_before {
+            self.push(Dom::from_ref(elem));
+            return;
         }
-        self.insert(head, Dom::from_ref(elem));
+
+        // Use binary search to find the insertion point.
+        let idx = self.partition_point(|existing| {
+            let existing_node = existing.upcast::<Node>();
+
+            // Check for sibling optimization (same parent)
+            if existing_node.GetParentNode() == elem_node.GetParentNode() {
+                is_before_sibling(existing_node, elem_node)
+            } else {
+                existing_node.is_before(elem_node)
+            }
+        });
+
+        self.insert(idx, Dom::from_ref(elem));
     }
 }
