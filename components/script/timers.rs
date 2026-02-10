@@ -51,7 +51,7 @@ type CompletionStep = Box<dyn FnOnce(&GlobalScope, CanGc) + 'static>;
 /// OrderingIdentifier per spec ("orderingIdentifier")
 type OrderingIdentifier = DOMString;
 
-#[derive(JSTraceable, MallocSizeOf)]
+#[derive(Clone, Copy, JSTraceable, MallocSizeOf)]
 struct OrderingEntry {
     milliseconds: u64,
     start_seq: u64,
@@ -230,7 +230,6 @@ impl OneshotTimers {
         milliseconds: u64,
     ) {
         let mut map = self.runsteps_queues.borrow_mut();
-        let q = map.entry(ordering_id.clone()).or_default();
 
         let seq = {
             let cur = self.runsteps_start_seq.get();
@@ -244,12 +243,22 @@ impl OneshotTimers {
             handle,
         };
 
+        if let Some(q) = map.get_mut(ordering_id) {
+            Self::insert_into_runsteps_queue(q, key);
+        } else {
+            let mut q = Vec::new();
+            Self::insert_into_runsteps_queue(&mut q, key);
+            map.insert(ordering_id.clone(), q);
+        }
+    }
+
+    fn insert_into_runsteps_queue(q: &mut Vec<OrderingEntry>, key: OrderingEntry) {
         let idx = q
             .binary_search_by(|ordering_entry| {
-                match ordering_entry.milliseconds.cmp(&milliseconds) {
+                match ordering_entry.milliseconds.cmp(&key.milliseconds) {
                     Ordering::Less => Ordering::Less,
                     Ordering::Greater => Ordering::Greater,
-                    Ordering::Equal => ordering_entry.start_seq.cmp(&seq),
+                    Ordering::Equal => ordering_entry.start_seq.cmp(&key.start_seq),
                 }
             })
             .unwrap_or_else(|i| i);
@@ -342,14 +351,20 @@ impl OneshotTimers {
         // that were installed during fire of another timer
         let mut timers_to_run = Vec::new();
 
-        loop {
+        {
             let mut timers = self.timers.borrow_mut();
+            loop {
+                let should_pop = match timers.back() {
+                    Some(timer) => timer.scheduled_for <= base_time,
+                    None => false,
+                };
 
-            if timers.is_empty() || timers.back().unwrap().scheduled_for > base_time {
-                break;
+                if should_pop {
+                    timers_to_run.push(timers.pop_back().unwrap());
+                } else {
+                    break;
+                }
             }
-
-            timers_to_run.push(timers.pop_back().unwrap());
         }
 
         for timer in timers_to_run {
