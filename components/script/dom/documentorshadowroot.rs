@@ -195,28 +195,31 @@ impl DocumentOrShadowRoot {
         let viewport = self.window.viewport_details().size;
 
         if !has_browsing_context {
-            return vec![];
+            return Vec::new();
         }
 
         // Step 2
         if x < 0.0 || y < 0.0 || x > viewport.width || y > viewport.height {
-            return vec![];
+            return Vec::new();
         }
 
         // Step 1 and Step 3
         let nodes = self
             .window
             .elements_from_point_query(LayoutPoint::new(x, y), ElementsFromPointFlags::FindAll);
-        let mut elements: Vec<DomRoot<Element>> = nodes
-            .iter()
-            .flat_map(|result| {
-                // SAFETY: This is safe because `Self::query_elements_from_point` has ensured that
-                // layout has run and any OpaqueNodes that no longer refer to real nodes are gone.
-                let address = UntrustedNodeAddress(result.node.0 as *const c_void);
-                let node = unsafe { node::from_untrusted_node_address(address) };
-                DomRoot::downcast::<Element>(node)
-            })
-            .collect();
+
+        // Pre-allocate assuming all nodes are elements, plus one for potential root element.
+        let mut elements: Vec<DomRoot<Element>> = Vec::with_capacity(nodes.len() + 1);
+
+        for result in nodes {
+            // SAFETY: This is safe because `Self::query_elements_from_point` has ensured that
+            // layout has run and any OpaqueNodes that no longer refer to real nodes are gone.
+            let address = UntrustedNodeAddress(result.node.0 as *const c_void);
+            let node = unsafe { node::from_untrusted_node_address(address) };
+            if let Some(element) = DomRoot::downcast::<Element>(node) {
+                elements.push(element);
+            }
+        }
 
         // Step 4
         if let Some(root_element) = document_element {
