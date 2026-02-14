@@ -17,6 +17,7 @@ use js::rust::ToString;
 use markup5ever::{LocalName, ns};
 use servo_config::pref;
 use style::attr::AttrValue;
+use style::properties::PropertyId;
 use uuid::Uuid;
 
 use crate::document_collection::DocumentCollection;
@@ -210,16 +211,17 @@ pub(crate) fn handle_get_attribute_style(
     };
     let style = elem.Style(can_gc);
 
-    let msg = (0..style.Length())
-        .map(|i| {
-            let name = style.Item(i);
-            NodeStyle {
-                name: name.to_string(),
-                value: style.GetPropertyValue(name.clone()).to_string(),
-                priority: style.GetPropertyPriority(name).to_string(),
-            }
-        })
-        .collect();
+    let len = style.Length();
+    let mut msg = Vec::with_capacity(len as usize);
+    for i in 0..len {
+        if let Some(id) = style.item_id(i) {
+            msg.push(NodeStyle {
+                name: id.name().to_string(),
+                value: style.get_property_value(id.clone()).to_string(),
+                priority: style.get_property_priority_by_id(&id).to_string(),
+            });
+        }
+    }
 
     reply.send(Some(msg)).unwrap();
 }
@@ -254,13 +256,13 @@ pub(crate) fn handle_get_stylesheet_style(
                 Some(style.Style(can_gc))
             })
             .flat_map(|style| {
-                (0..style.Length()).map(move |i| {
-                    let name = style.Item(i);
-                    NodeStyle {
-                        name: name.to_string(),
-                        value: style.GetPropertyValue(name.clone()).to_string(),
-                        priority: style.GetPropertyPriority(name).to_string(),
-                    }
+                (0..style.Length()).filter_map(move |i| {
+                    let id = style.item_id(i)?;
+                    Some(NodeStyle {
+                        name: id.name().to_string(),
+                        value: style.get_property_value(id.clone()).to_string(),
+                        priority: style.get_property_priority_by_id(&id).to_string(),
+                    })
                 })
             })
             .collect();
@@ -326,16 +328,17 @@ pub(crate) fn handle_get_computed_style(
         .expect("This should be an element");
     let computed_style = window.GetComputedStyle(elem, None);
 
-    let msg = (0..computed_style.Length())
-        .map(|i| {
-            let name = computed_style.Item(i);
-            NodeStyle {
-                name: name.to_string(),
-                value: computed_style.GetPropertyValue(name.clone()).to_string(),
-                priority: computed_style.GetPropertyPriority(name).to_string(),
-            }
-        })
-        .collect();
+    let len = computed_style.Length();
+    let mut msg = Vec::with_capacity(len as usize);
+    for i in 0..len {
+        if let Some(id) = computed_style.item_id(i) {
+            msg.push(NodeStyle {
+                name: id.name().to_string(),
+                value: computed_style.get_property_value(id.clone()).to_string(),
+                priority: computed_style.get_property_priority_by_id(&id).to_string(),
+            });
+        }
+    }
 
     reply.send(Some(msg)).unwrap();
 }

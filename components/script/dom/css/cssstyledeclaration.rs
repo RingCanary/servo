@@ -296,7 +296,26 @@ impl CSSStyleDeclaration {
         }
     }
 
-    fn get_property_value(&self, id: PropertyId) -> DOMString {
+    pub(crate) fn item_id(&self, index: u32) -> Option<PropertyId> {
+        if matches!(self.owner, CSSStyleOwner::Null) {
+            return None;
+        }
+
+        if self.readonly {
+            // Readonly style declarations are used for getComputedStyle.
+            // TODO: include custom properties whose computed value is not the guaranteed-invalid value.
+            let longhand = ENABLED_LONGHAND_PROPERTIES.get(index as usize)?;
+            return Some(PropertyId::NonCustom((*longhand).into()));
+        }
+
+        self.owner.with_block(|pdb| {
+            pdb.declarations()
+                .get(index as usize)
+                .map(|d| d.id().clone())
+        })
+    }
+
+    pub(crate) fn get_property_value(&self, id: PropertyId) -> DOMString {
         if matches!(self.owner, CSSStyleOwner::Null) {
             return DOMString::new();
         }
@@ -313,6 +332,21 @@ impl CSSStyleDeclaration {
         });
 
         DOMString::from(string)
+    }
+
+    pub(crate) fn get_property_priority_by_id(&self, id: &PropertyId) -> DOMString {
+        if self.readonly {
+            // Readonly style declarations are used for getComputedStyle.
+            return DOMString::new();
+        }
+
+        self.owner.with_block(|pdb| {
+            if pdb.property_priority(id).important() {
+                DOMString::from("important")
+            } else {
+                DOMString::new()
+            }
+        })
     }
 
     /// <https://drafts.csswg.org/cssom/#dom-cssstyledeclaration-setproperty>
