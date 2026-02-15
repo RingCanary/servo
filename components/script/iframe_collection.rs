@@ -46,6 +46,14 @@ impl IFrameCollection {
         self.invalid = true;
     }
 
+    pub(crate) fn len(&self) -> usize {
+        self.iframes.len()
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.iframes.is_empty()
+    }
+
     /// Validate that the collection is up-to-date with the given [`Document`]. If it isn't up-to-date
     /// rebuild it.
     pub(crate) fn validate(&mut self, document: &Document) {

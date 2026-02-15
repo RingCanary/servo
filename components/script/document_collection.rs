@@ -140,12 +140,16 @@ impl DocumentTree {
         let mut tree = DocumentTree::default();
         tree.tree.reserve(documents.map.len());
         for (id, document) in documents.iter() {
-            let children: Vec<PipelineId> = document
-                .iframes()
-                .iter()
-                .filter_map(|iframe| iframe.pipeline_id())
-                .filter(|iframe_pipeline_id| documents.find_document(*iframe_pipeline_id).is_some())
-                .collect();
+            let iframes = document.iframes();
+            let mut children: Vec<PipelineId> = Vec::with_capacity(iframes.len());
+            children.extend(
+                iframes
+                    .iter()
+                    .filter_map(|iframe| iframe.pipeline_id())
+                    .filter(|iframe_pipeline_id| {
+                        documents.find_document(*iframe_pipeline_id).is_some()
+                    }),
+            );
             for child in &children {
                 tree.tree.entry(*child).or_default().parent = Some(id);
             }
