@@ -236,8 +236,8 @@ impl CSSStyleDeclaration {
         // If creating a CSSStyleDeclaration with CSSSStyleOwner::Null, this should always
         // be in read-only mode.
         assert!(
-            !matches!(owner, CSSStyleOwner::Null) ||
-                modification_access == CSSModificationAccess::Readonly
+            !matches!(owner, CSSStyleOwner::Null)
+                || modification_access == CSSModificationAccess::Readonly
         );
 
         CSSStyleDeclaration {
@@ -276,6 +276,59 @@ impl CSSStyleDeclaration {
         } else {
             panic!("update_rule called on CSSStyleDeclaration with a Element owner");
         }
+    }
+
+    pub(crate) fn item_id(&self, index: u32) -> Option<PropertyId> {
+        if matches!(self.owner, CSSStyleOwner::Null) {
+            return None;
+        }
+
+        if self.readonly {
+            // Readonly style declarations are used for getComputedStyle.
+            // TODO: include custom properties whose computed value is not the guaranteed-invalid value.
+            let longhand = ENABLED_LONGHAND_PROPERTIES.get(index as usize)?;
+            return Some(PropertyId::NonCustom(*longhand));
+        }
+        self.owner.with_block(|pdb| {
+            pdb.declarations()
+                .get(index as usize)
+                .map(|d| d.id().clone())
+        })
+    }
+
+    pub(crate) fn get_property_priority_by_id(&self, id: &PropertyId) -> DOMString {
+        if self.readonly {
+            // Readonly style declarations are used for getComputedStyle.
+            return DOMString::new();
+        }
+
+        self.owner.with_block(|pdb| {
+            if pdb.property_priority(id).important() {
+                DOMString::from("important")
+            } else {
+                // Step 4
+                DOMString::new()
+            }
+        })
+    }
+
+    pub(crate) fn get_property_value_by_id(&self, id: &PropertyId) -> DOMString {
+        if matches!(self.owner, CSSStyleOwner::Null) {
+            return DOMString::new();
+        }
+
+        if self.readonly {
+            // Readonly style declarations are used for getComputedStyle.
+            return self.get_computed_style(id.clone());
+        }
+
+        let mut string = String::new();
+
+        self.owner.with_block(|pdb| {
+            pdb.property_value_to_css(id, &mut string).unwrap();
+        });
+
+        DOMString::from(string)
     }
 
     fn get_computed_style(&self, property: PropertyId) -> DOMString {
