@@ -4581,23 +4581,12 @@ where
     /// performing a [preorder traversal](https://dom.spec.whatwg.org/#concept-tree-order) of the tree root's children,
     /// and increasing the destination index in the array every time a node in the array is encountered during
     /// the traversal.
-    fn insert_pre_order(&mut self, elem: &T, tree_root: &Node) {
-        if self.is_empty() {
-            self.push(Dom::from_ref(elem));
-            return;
-        }
-
+    fn insert_pre_order(&mut self, elem: &T, _tree_root: &Node) {
         let elem_node = elem.upcast::<Node>();
-        let mut head: usize = 0;
-        for node in tree_root.traverse_preorder(ShadowIncluding::No) {
-            let head_node = DomRoot::upcast::<Node>(DomRoot::from_ref(&*self[head]));
-            if head_node == node {
-                head += 1;
-            }
-            if elem_node == &*node || head == self.len() {
-                break;
-            }
-        }
-        self.insert(head, Dom::from_ref(elem));
+        let index = self.partition_point(|item| {
+            let item_node = item.upcast::<Node>();
+            item_node.is_before(elem_node)
+        });
+        self.insert(index, Dom::from_ref(elem));
     }
 }
