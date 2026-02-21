@@ -207,16 +207,16 @@ impl DocumentOrShadowRoot {
         let nodes = self
             .window
             .elements_from_point_query(LayoutPoint::new(x, y), ElementsFromPointFlags::FindAll);
-        let mut elements: Vec<DomRoot<Element>> = nodes
-            .iter()
-            .flat_map(|result| {
-                // SAFETY: This is safe because `Self::query_elements_from_point` has ensured that
-                // layout has run and any OpaqueNodes that no longer refer to real nodes are gone.
-                let address = UntrustedNodeAddress(result.node.0 as *const c_void);
-                let node = unsafe { node::from_untrusted_node_address(address) };
-                DomRoot::downcast::<Element>(node)
-            })
-            .collect();
+        let mut elements = Vec::with_capacity(nodes.len() + 1);
+        for result in nodes {
+            // SAFETY: This is safe because `Self::query_elements_from_point` has ensured that
+            // layout has run and any OpaqueNodes that no longer refer to real nodes are gone.
+            let address = UntrustedNodeAddress(result.node.0 as *const c_void);
+            let node = unsafe { node::from_untrusted_node_address(address) };
+            if let Some(element) = DomRoot::downcast::<Element>(node) {
+                elements.push(element);
+            }
+        }
 
         // Step 4
         if let Some(root_element) = document_element {
