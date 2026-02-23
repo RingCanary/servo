@@ -230,7 +230,10 @@ impl OneshotTimers {
         milliseconds: u64,
     ) {
         let mut map = self.runsteps_queues.borrow_mut();
-        let q = map.entry(ordering_id.clone()).or_default();
+        if !map.contains_key(ordering_id) {
+            map.insert(ordering_id.clone(), Vec::new());
+        }
+        let q = map.get_mut(ordering_id).unwrap();
 
         let seq = {
             let cur = self.runsteps_start_seq.get();
@@ -342,14 +345,21 @@ impl OneshotTimers {
         // that were installed during fire of another timer
         let mut timers_to_run = Vec::new();
 
-        loop {
+        {
             let mut timers = self.timers.borrow_mut();
+            loop {
+                // Peek at the last element (earliest deadline)
+                let should_pop = match timers.back() {
+                    Some(timer) => timer.scheduled_for <= base_time,
+                    None => false,
+                };
 
-            if timers.is_empty() || timers.back().unwrap().scheduled_for > base_time {
-                break;
+                if should_pop {
+                    timers_to_run.push(timers.pop_back().unwrap());
+                } else {
+                    break;
+                }
             }
-
-            timers_to_run.push(timers.pop_back().unwrap());
         }
 
         for timer in timers_to_run {
