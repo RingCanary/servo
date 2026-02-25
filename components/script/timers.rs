@@ -230,7 +230,11 @@ impl OneshotTimers {
         milliseconds: u64,
     ) {
         let mut map = self.runsteps_queues.borrow_mut();
-        let q = map.entry(ordering_id.clone()).or_default();
+        let q = if let Some(q) = map.get_mut(ordering_id) {
+            q
+        } else {
+            map.entry(ordering_id.clone()).or_default()
+        };
 
         let seq = {
             let cur = self.runsteps_start_seq.get();
@@ -342,14 +346,19 @@ impl OneshotTimers {
         // that were installed during fire of another timer
         let mut timers_to_run = Vec::new();
 
-        loop {
+        {
             let mut timers = self.timers.borrow_mut();
+            loop {
+                let should_pop = timers
+                    .back()
+                    .map_or(false, |t| t.scheduled_for <= base_time);
 
-            if timers.is_empty() || timers.back().unwrap().scheduled_for > base_time {
-                break;
+                if !should_pop {
+                    break;
+                }
+
+                timers_to_run.push(timers.pop_back().unwrap());
             }
-
-            timers_to_run.push(timers.pop_back().unwrap());
         }
 
         for timer in timers_to_run {
@@ -670,8 +679,8 @@ impl JsTimers {
                 for _ in 0..arguments.len() {
                     args.push(Heap::default());
                 }
-                for (i, item) in arguments.iter().enumerate() {
-                    args.get_mut(i).unwrap().set(item.get());
+                for (arg_heap, item) in args.iter_mut().zip(arguments.iter()) {
+                    arg_heap.set(item.get());
                 }
                 // Step 9.5. If handler is a Function, then invoke handler given arguments and "report",
                 // and with callback this value set to thisArg.
@@ -834,8 +843,8 @@ impl JsTimerTask {
         //
         // Since we choose proactively prevent execution (see 4.1 above), we must only
         // reschedule repeating timers when they were not canceled as part of step 4.2.
-        if self.is_interval == IsInterval::Interval &&
-            timers.active_timers.borrow().contains_key(&self.handle)
+        if self.is_interval == IsInterval::Interval
+            && timers.active_timers.borrow().contains_key(&self.handle)
         {
             timers.initialize_and_schedule(&this.global(), self);
         }
