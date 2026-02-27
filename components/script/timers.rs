@@ -342,14 +342,15 @@ impl OneshotTimers {
         // that were installed during fire of another timer
         let mut timers_to_run = Vec::new();
 
-        loop {
+        {
             let mut timers = self.timers.borrow_mut();
+            loop {
+                if timers.is_empty() || timers.back().unwrap().scheduled_for > base_time {
+                    break;
+                }
 
-            if timers.is_empty() || timers.back().unwrap().scheduled_for > base_time {
-                break;
+                timers_to_run.push(timers.pop_back().unwrap());
             }
-
-            timers_to_run.push(timers.pop_back().unwrap());
         }
 
         for timer in timers_to_run {
@@ -834,8 +835,8 @@ impl JsTimerTask {
         //
         // Since we choose proactively prevent execution (see 4.1 above), we must only
         // reschedule repeating timers when they were not canceled as part of step 4.2.
-        if self.is_interval == IsInterval::Interval &&
-            timers.active_timers.borrow().contains_key(&self.handle)
+        if self.is_interval == IsInterval::Interval
+            && timers.active_timers.borrow().contains_key(&self.handle)
         {
             timers.initialize_and_schedule(&this.global(), self);
         }
