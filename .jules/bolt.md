@@ -1,0 +1,3 @@
+## 2024-05-14 - HTMLCollection.SupportedPropertyNames O(N^2) optimization
+**Learning:** `HTMLCollection::SupportedPropertyNames` (in `components/script/dom/html/htmlcollection.rs`) iterates over HTML elements to extract unique ID and name properties. It used a loop checking uniqueness using `!result.contains(&id_str)` with O(N^2) complexity where elements are converted to `DOMString` and searched linearly.
+**Action:** Replaced linear searches with `HashSet::new()` to track uniqueness using the `Atom` types before they are converted to the allocated `DOMString`, reducing complexity to O(N) and drastically lowering allocation and parsing overhead in large collections.
