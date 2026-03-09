@@ -639,8 +639,9 @@ impl HTMLFormElementMethods<crate::DomTypeHolder> for HTMLFormElement {
 
         // Step 7-8
         let mut names_vec: Vec<DOMString> = Vec::new();
+        let mut seen = std::collections::HashSet::new();
         for elem in sourced_names_vec.iter() {
-            if !names_vec.iter().any(|name| *name == *elem.name) {
+            if seen.insert(elem.name.clone()) {
                 names_vec.push(DOMString::from(&*elem.name));
             }
         }
