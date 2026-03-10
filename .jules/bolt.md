@@ -1,0 +1,3 @@
+## 2024-05-19 - [O(N^2) DOMString Allocation Avoidance in Script Component]
+**Learning:** In `components/script`, iterating over DOM elements to construct a unique list of supported property names (e.g., `HTMLCollection::SupportedPropertyNames`) using a `Vec::contains` check leads to an O(N^2) complexity. Additionally, doing this check with `DOMString` requires heap allocation for every element, even duplicates.
+**Action:** Always use a `std::collections::HashSet` to track seen unique identifiers (like `Atom`, which is cheap to clone) during iteration. This reduces the complexity to O(N) and defers the expensive `DOMString::from` heap allocation until the element is confirmed to be unique.
