@@ -434,22 +434,21 @@ impl HTMLCollectionMethods<crate::DomTypeHolder> for HTMLCollection {
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         // Step 1
         let mut result = vec![];
+        let mut seen = std::collections::HashSet::new();
 
         // Step 2
         for elem in self.elements_iter() {
             // Step 2.1
             if let Some(id_atom) = elem.get_id() {
-                let id_str = DOMString::from(&*id_atom);
-                if !result.contains(&id_str) {
-                    result.push(id_str);
+                if seen.insert(id_atom.clone()) {
+                    result.push(DOMString::from(&*id_atom));
                 }
             }
             // Step 2.2
             if *elem.namespace() == ns!(html) {
                 if let Some(name_atom) = elem.get_name() {
-                    let name_str = DOMString::from(&*name_atom);
-                    if !result.contains(&name_str) {
-                        result.push(name_str)
+                    if seen.insert(name_atom.clone()) {
+                        result.push(DOMString::from(&*name_atom));
                     }
                 }
             }
