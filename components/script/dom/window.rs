@@ -1615,7 +1615,7 @@ impl WindowMethods<crate::DomTypeHolder> for Window {
 
     /// <https://html.spec.whatwg.org/multipage/#accessing-other-browsing-contexts>
     fn Length(&self) -> u32 {
-        self.Document().iframes().iter().count() as u32
+        self.Document().iframes().len() as u32
     }
 
     /// <https://html.spec.whatwg.org/multipage/#dom-parent>
