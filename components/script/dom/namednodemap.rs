@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashSet;
+
 use dom_struct::dom_struct;
 use html5ever::LocalName;
 
@@ -108,6 +110,9 @@ impl NamedNodeMapMethods<crate::DomTypeHolder> for NamedNodeMap {
     /// <https://heycam.github.io/webidl/#dfn-supported-property-names>
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         let mut names = vec![];
+        // ⚡ Bolt: Replace O(N) Vec::any scan with O(1) HashSet lookup, turning O(N^2) loop into O(N),
+        // and skipping DOMString allocation for duplicate entries.
+        let mut seen = HashSet::new();
         let html_element_in_html_document = self.owner.html_element_in_html_document();
         for attr in self.owner.attrs().iter() {
             let s = &**attr.name();
@@ -115,7 +120,7 @@ impl NamedNodeMapMethods<crate::DomTypeHolder> for NamedNodeMap {
                 continue;
             }
 
-            if !names.iter().any(|name| name == s) {
+            if seen.insert(s) {
                 names.push(DOMString::from(s));
             }
         }
