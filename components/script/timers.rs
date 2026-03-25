@@ -59,7 +59,7 @@ struct OrderingEntry {
 }
 
 // Per-ordering queues map
-type OrderingQueues = FxHashMap<OrderingIdentifier, Vec<OrderingEntry>>;
+type OrderingQueues = FxHashMap<OrderingIdentifier, VecDeque<OrderingEntry>>;
 
 // Active timers map for Run Steps After A Timeout
 type RunStepsActiveMap = FxHashMap<TimerKey, RunStepsDeadline>;
@@ -369,7 +369,7 @@ impl OneshotTimers {
                         let queues_ref = self.runsteps_queues.borrow();
                         queues_ref
                             .get(ordering_id)
-                            .and_then(|v| v.first().map(|t| t.handle))
+                            .and_then(|v| v.front().map(|t| t.handle))
                     };
                     let is_head = head_handle_opt.is_none_or(|head| head == timer.handle);
 
@@ -410,7 +410,7 @@ impl OneshotTimers {
                         let mut queues_mut = self.runsteps_queues.borrow_mut();
                         if let Some(q) = queues_mut.get_mut(&ordering_id_owned) {
                             if !q.is_empty() {
-                                q.remove(0);
+                                q.pop_front();
                             }
                             if q.is_empty() {
                                 queues_mut.remove(&ordering_id_owned);
