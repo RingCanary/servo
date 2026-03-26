@@ -164,6 +164,14 @@ impl IFrameCollection {
         }
     }
 
+    pub(crate) fn len(&self) -> usize {
+        self.iframes.len()
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.iframes.is_empty()
+    }
+
     pub(crate) fn iter(&self) -> impl Iterator<Item = DomRoot<HTMLIFrameElement>> + use<'_> {
         self.iframes.iter().map(|iframe| iframe.element.as_rooted())
     }
