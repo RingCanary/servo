@@ -167,4 +167,15 @@ impl IFrameCollection {
     pub(crate) fn iter(&self) -> impl Iterator<Item = DomRoot<HTMLIFrameElement>> + use<'_> {
         self.iframes.iter().map(|iframe| iframe.element.as_rooted())
     }
+
+    /// Returns the number of iframes in the collection.
+    /// This is an O(1) operation, compared to `iter().count()` which is O(N).
+    pub(crate) fn len(&self) -> usize {
+        self.iframes.len()
+    }
+
+    /// Returns true if the collection contains no iframes.
+    pub(crate) fn is_empty(&self) -> bool {
+        self.iframes.is_empty()
+    }
 }
