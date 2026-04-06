@@ -220,9 +220,9 @@ impl HTMLCollection {
         match elem.prefix().as_ref() {
             None => elem.local_name() == qualified_name,
             Some(prefix) => {
-                qualified_name.starts_with(&**prefix) &&
-                    qualified_name.find(':') == Some(prefix.len()) &&
-                    qualified_name.ends_with(&**elem.local_name())
+                qualified_name.starts_with(&**prefix)
+                    && qualified_name.find(':') == Some(prefix.len())
+                    && qualified_name.ends_with(&**elem.local_name())
             },
         }
     }
@@ -253,9 +253,9 @@ impl HTMLCollection {
         }
         impl CollectionFilter for TagNameNSFilter {
             fn filter(&self, elem: &Element, _root: &Node) -> bool {
-                ((self.qname.ns == namespace_url!("*")) || (self.qname.ns == *elem.namespace())) &&
-                    ((self.qname.local == local_name!("*")) ||
-                        (self.qname.local == *elem.local_name()))
+                ((self.qname.ns == namespace_url!("*")) || (self.qname.ns == *elem.namespace()))
+                    && ((self.qname.local == local_name!("*"))
+                        || (self.qname.local == *elem.local_name()))
             }
         }
         let filter = TagNameNSFilter { qname };
@@ -415,8 +415,8 @@ impl HTMLCollectionMethods<crate::DomTypeHolder> for HTMLCollection {
 
         // Step 2.
         self.elements_iter().find(|elem| {
-            elem.get_id().is_some_and(|id| id == key) ||
-                (elem.namespace() == &ns!(html) && elem.get_name().is_some_and(|id| id == key))
+            elem.get_id().is_some_and(|id| id == key)
+                || (elem.namespace() == &ns!(html) && elem.get_name().is_some_and(|id| id == key))
         })
     }
 
@@ -434,22 +434,22 @@ impl HTMLCollectionMethods<crate::DomTypeHolder> for HTMLCollection {
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         // Step 1
         let mut result = vec![];
+        // O(1) deduplication via HashSet rather than O(N) `contains` checks on `result`
+        let mut seen = std::collections::HashSet::new();
 
         // Step 2
         for elem in self.elements_iter() {
             // Step 2.1
             if let Some(id_atom) = elem.get_id() {
-                let id_str = DOMString::from(&*id_atom);
-                if !result.contains(&id_str) {
-                    result.push(id_str);
+                if seen.insert(id_atom.clone()) {
+                    result.push(DOMString::from(&*id_atom));
                 }
             }
             // Step 2.2
             if *elem.namespace() == ns!(html) {
                 if let Some(name_atom) = elem.get_name() {
-                    let name_str = DOMString::from(&*name_atom);
-                    if !result.contains(&name_str) {
-                        result.push(name_str)
+                    if seen.insert(name_atom.clone()) {
+                        result.push(DOMString::from(&*name_atom))
                     }
                 }
             }
