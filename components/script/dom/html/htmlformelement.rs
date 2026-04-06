@@ -161,9 +161,9 @@ impl HTMLFormElement {
                 RadioListMode::ControlsExceptImageInputs => {
                     if child
                         .downcast::<HTMLElement>()
-                        .is_some_and(|c| c.is_listed_element()) &&
-                        (child.get_id().is_some_and(|i| i == *name) ||
-                            child.get_name().is_some_and(|n| n == *name))
+                        .is_some_and(|c| c.is_listed_element())
+                        && (child.get_id().is_some_and(|i| i == *name)
+                            || child.get_name().is_some_and(|n| n == *name))
                     {
                         if let Some(inp) = child.downcast::<HTMLInputElement>() {
                             // input, only return it if it's not image-button state
@@ -176,9 +176,9 @@ impl HTMLFormElement {
                     return false;
                 },
                 RadioListMode::Images => {
-                    return child.is::<HTMLImageElement>() &&
-                        (child.get_id().is_some_and(|i| i == *name) ||
-                            child.get_name().is_some_and(|n| n == *name));
+                    return child.is::<HTMLImageElement>()
+                        && (child.get_id().is_some_and(|i| i == *name)
+                            || child.get_name().is_some_and(|n| n == *name));
                 },
             }
         }
@@ -613,8 +613,8 @@ impl HTMLFormElementMethods<crate::DomTypeHolder> for HTMLFormElement {
         sourced_names_vec.sort_by(|a, b| {
             if a.element
                 .upcast::<Node>()
-                .CompareDocumentPosition(b.element.upcast::<Node>()) ==
-                0
+                .CompareDocumentPosition(b.element.upcast::<Node>())
+                == 0
             {
                 if a.source.is_past() && b.source.is_past() {
                     b.source.cmp(&a.source)
@@ -624,9 +624,9 @@ impl HTMLFormElementMethods<crate::DomTypeHolder> for HTMLFormElement {
             } else if a
                 .element
                 .upcast::<Node>()
-                .CompareDocumentPosition(b.element.upcast::<Node>()) &
-                NodeConstants::DOCUMENT_POSITION_FOLLOWING ==
-                NodeConstants::DOCUMENT_POSITION_FOLLOWING
+                .CompareDocumentPosition(b.element.upcast::<Node>())
+                & NodeConstants::DOCUMENT_POSITION_FOLLOWING
+                == NodeConstants::DOCUMENT_POSITION_FOLLOWING
             {
                 std::cmp::Ordering::Less
             } else {
@@ -639,8 +639,10 @@ impl HTMLFormElementMethods<crate::DomTypeHolder> for HTMLFormElement {
 
         // Step 7-8
         let mut names_vec: Vec<DOMString> = Vec::new();
+        // O(1) deduplication via HashSet rather than O(N) `names_vec.iter().any(...)`
+        let mut seen = std::collections::HashSet::new();
         for elem in sourced_names_vec.iter() {
-            if !names_vec.iter().any(|name| *name == *elem.name) {
+            if seen.insert(elem.name.clone()) {
                 names_vec.push(DOMString::from(&*elem.name));
             }
         }
@@ -909,11 +911,11 @@ impl HTMLFormElement {
                 );
             },
             // https://html.spec.whatwg.org/multipage/#submit-get-action
-            ("file", _) |
-            ("about", _) |
-            ("data", FormMethod::Post) |
-            ("ftp", _) |
-            ("javascript", _) => {
+            ("file", _)
+            | ("about", _)
+            | ("data", FormMethod::Post)
+            | ("ftp", _)
+            | ("javascript", _) => {
                 self.plan_to_navigate(load_data, target_window);
             },
             ("mailto", FormMethod::Post) => {
@@ -1399,11 +1401,11 @@ impl Element {
         };
         matches!(
             element_type,
-            HTMLElementTypeId::HTMLInputElement |
-                HTMLElementTypeId::HTMLSelectElement |
-                HTMLElementTypeId::HTMLTextAreaElement |
-                HTMLElementTypeId::HTMLOutputElement |
-                HTMLElementTypeId::HTMLElement
+            HTMLElementTypeId::HTMLInputElement
+                | HTMLElementTypeId::HTMLSelectElement
+                | HTMLElementTypeId::HTMLTextAreaElement
+                | HTMLElementTypeId::HTMLOutputElement
+                | HTMLElementTypeId::HTMLElement
         )
     }
 
@@ -1632,9 +1634,9 @@ pub(crate) trait FormControl: DomObject {
             .find_map(DomRoot::downcast::<HTMLFormElement>);
 
         // Step 1
-        if old_owner.is_some() &&
-            !(self.is_listed() && has_form_id) &&
-            nearest_form_ancestor == old_owner
+        if old_owner.is_some()
+            && !(self.is_listed() && has_form_id)
+            && nearest_form_ancestor == old_owner
         {
             return;
         }
