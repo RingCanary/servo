@@ -1,0 +1,3 @@
+## 2024-05-24 - O(N^2) Anti-Pattern in DOM Collection Iteration
+**Learning:** `Vec::contains` inside iterative loops to deduce unique element identities leads to O(N^2) complexity. This anti-pattern was prevalent across multiple DOM property accessors (`SupportedPropertyNames`) within `components/script`.
+**Action:** Replace `Vec::contains` inside loops with O(1) tracking using `std::collections::HashSet`. For interned strings like `stylo_atoms::Atom`, `clone()` is cheap and suitable for hash sets. Delay potentially heavy wrapper allocations (like `DOMString::from`) until after uniqueness is confirmed via `HashSet::insert`.
