@@ -1,0 +1,3 @@
+## 2024-04-10 - O(N^2) Unique Tracking in DOM Iteration
+**Learning:** Checking for uniqueness by doing `!vec.contains()` or `!vec.iter().any()` inside a collection mapping loop (like in `SupportedPropertyNames` for `HTMLCollection` and `HTMLFormElement`) leads to O(N^2) complexity and creates inner-loop memory allocations for strings that are eventually discarded. Since Servo uses `Atom`s (interned strings) extensively, cloning an `Atom` is extremely cheap.
+**Action:** Replace `vec.contains()` uniqueness tracking loops with `std::collections::HashSet::insert()` combined with `.clone()` on `Atom`s or `&str` references, converting O(N^2) lookups into O(N) operations without heavy string allocations.
