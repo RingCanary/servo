@@ -1,0 +1,3 @@
+## 2025-02-28 - [HashSet Tracking for Uniqueness to Avoid O(N^2) Overheads]
+**Learning:** During iteration over DOM properties like SupportedPropertyNames, using `Vec::contains` or `iter().any` adds up to an O(N^2) complexity cost in Rust due to scanning. Additionally, deferring allocations (like `DOMString::from` mapping to JS strings) significantly boosts performance.
+**Action:** When mapping over iterators for distinct property collections, always favor checking uniqueness with `HashSet` (using `Atom`s or `&str` references directly where feasible). Only perform string conversions via allocations on items definitively marked as unique.
