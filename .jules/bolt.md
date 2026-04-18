@@ -1,0 +1,3 @@
+## 2023-10-31 - [O(1) Deduplication in DOM Collections]
+**Learning:** During string deduplication passes in DOM collections (like `SupportedPropertyNames` in `HTMLCollection` and `HTMLFormElement`), checking for uniqueness in an `O(N)` loop using `names.iter().any(...)` or `contains(...)` on a `Vec` leads to `O(N^2)` complexity. Additionally, eagerly creating `DOMString` before confirming uniqueness incurs unnecessary heap allocations.
+**Action:** Always use `std::collections::HashSet` with interned string representations like `Atom` or `&str` for O(1) deduplication logic, and delay `DOMString` or `String` allocations until the element passes the `.insert()` uniqueness check.
