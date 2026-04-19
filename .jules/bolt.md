@@ -1,0 +1,3 @@
+## 2026-04-19 - Pre-allocating Vec in chained iterators
+**Learning:** In Rust, chained iterators like `flat_map().collect()` or `filter_map().collect()` often obscure the exact size hint of the resulting collection. This causes `Vec::from_iter` (called by `collect`) to allocate conservatively or reallocate repeatedly, leading to allocation churn in hot paths like layout querying (`elements_from_point`).
+**Action:** When the maximum bounds of an iterator are known (e.g., from an initial `nodes.len()`), replace `collect()` with explicit `Vec::with_capacity(max_size)` followed by `.extend()` or a `for` loop to guarantee a single memory allocation.
