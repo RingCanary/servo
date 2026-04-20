@@ -1,0 +1,3 @@
+## 2025-05-18 - Avoid O(N^2) deduplication in DOM collections
+**Learning:** Iterating over DOM collections to return deduplicated property names using `Vec::contains()` or `Iterator::any()` results in O(N^2) complexity. This is particularly problematic in `SupportedPropertyNames` functions where property names are being extracted and deduplicated.
+**Action:** When deduplicating property names or atoms in a collection, use a `std::collections::HashSet` to track seen items, achieving O(N) complexity for deduplication. Defer expensive `DOMString` conversions until the element is confirmed unique when possible.
