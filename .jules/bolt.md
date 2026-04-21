@@ -1,0 +1,3 @@
+## 2024-05-18 - Optimize SupportedPropertyNames collections
+**Learning:** Found multiple instances where DOM collections (`HTMLCollection`, `HTMLFormElement`, `NamedNodeMap`) deduplicated elements using `O(N^2)` vector scans (`!vec.contains()` or `!iter().any()`) when calling `SupportedPropertyNames`. Also discovered unnecessary string allocation via `.to_string().is_empty()` where `.is_empty()` on the underlying struct/Atom sufficed.
+**Action:** Always replace `O(N^2)` uniqueness checks with `HashSet` (`O(1)` amortized lookups) when generating output vectors, and delay heap allocation (e.g., `DOMString::from`) until after uniqueness is confirmed.
