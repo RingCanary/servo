@@ -108,14 +108,17 @@ impl NamedNodeMapMethods<crate::DomTypeHolder> for NamedNodeMap {
     /// <https://heycam.github.io/webidl/#dfn-supported-property-names>
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         let mut names = vec![];
+        let mut seen = std::collections::HashSet::new();
         let html_element_in_html_document = self.owner.html_element_in_html_document();
+
+        // O(N) deduplication using HashSet of &str instead of O(N^2) iter().any()
         for attr in self.owner.attrs().iter() {
             let s = &**attr.name();
             if html_element_in_html_document && !s.bytes().all(|b| b.to_ascii_lowercase() == b) {
                 continue;
             }
 
-            if !names.iter().any(|name| name == s) {
+            if seen.insert(s) {
                 names.push(DOMString::from(s));
             }
         }
