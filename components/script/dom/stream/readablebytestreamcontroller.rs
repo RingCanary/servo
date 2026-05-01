@@ -207,7 +207,7 @@ pub(crate) struct ReadableByteStreamController {
     /// <https://streams.spec.whatwg.org/#readablebytestreamcontroller-byobrequest>
     byob_request: MutNullableDom<ReadableStreamBYOBRequest>,
     /// <https://streams.spec.whatwg.org/#readablebytestreamcontroller-pendingpullintos>
-    pending_pull_intos: DomRefCell<Vec<PullIntoDescriptor>>,
+    pending_pull_intos: DomRefCell<std::collections::VecDeque<PullIntoDescriptor>>,
     /// <https://streams.spec.whatwg.org/#readablebytestreamcontroller-closerequested>
     close_requested: Cell<bool>,
     /// <https://streams.spec.whatwg.org/#readablebytestreamcontroller-started>
@@ -235,7 +235,7 @@ impl ReadableByteStreamController {
             stream: MutNullableDom::new(None),
             underlying_source: MutNullableDom::new(Some(&*underlying_source_container)),
             auto_allocate_chunk_size,
-            pending_pull_intos: DomRefCell::new(Vec::new()),
+            pending_pull_intos: DomRefCell::new(std::collections::VecDeque::new()),
             strategy_hwm,
             close_requested: Default::default(),
             queue: DomRefCell::new(Default::default()),
@@ -349,7 +349,7 @@ impl ReadableByteStreamController {
                     let mut pending_pull_intos = self.pending_pull_intos.borrow_mut();
                     if !pending_pull_intos.is_empty() {
                         // Append pullIntoDescriptor to controller.[[pendingPullIntos]].
-                        pending_pull_intos.push(pull_into_descriptor);
+                        pending_pull_intos.push_back(pull_into_descriptor);
 
                         // Perform ! ReadableStreamAddReadIntoRequest(stream, readIntoRequest).
                         stream.add_read_into_request(read_into_request);
@@ -438,7 +438,7 @@ impl ReadableByteStreamController {
                 {
                     self.pending_pull_intos
                         .borrow_mut()
-                        .push(pull_into_descriptor);
+                        .push_back(pull_into_descriptor);
                 }
                 // Perform ! ReadableStreamAddReadIntoRequest(stream, readIntoRequest).
                 stream.add_read_into_request(read_into_request);
@@ -474,7 +474,7 @@ impl ReadableByteStreamController {
             assert!(!pending_pull_intos.is_empty());
 
             // Let firstDescriptor be controller.[[pendingPullIntos]][0].
-            let first_descriptor = pending_pull_intos.first_mut().unwrap();
+            let first_descriptor = pending_pull_intos.front_mut().unwrap();
 
             // Let state be controller.[[stream]].[[state]].
             let stream = self.stream.get().unwrap();
@@ -498,8 +498,8 @@ impl ReadableByteStreamController {
 
                 // If firstDescriptor’s bytes filled + bytesWritten > firstDescriptor’s byte length,
                 // throw a RangeError exception.
-                if first_descriptor.bytes_filled.get() + bytes_written >
-                    first_descriptor.byte_length
+                if first_descriptor.bytes_filled.get() + bytes_written
+                    > first_descriptor.byte_length
                 {
                     return Err(Error::Range(
                         "bytes filled + bytesWritten > byte length".to_owned(),
@@ -528,7 +528,7 @@ impl ReadableByteStreamController {
         {
             // Let firstDescriptor be controller.[[pendingPullIntos]][0].
             let pending_pull_intos = self.pending_pull_intos.borrow();
-            let first_descriptor = pending_pull_intos.first().unwrap();
+            let first_descriptor = pending_pull_intos.front().unwrap();
 
             // Assert: ! CanTransferArrayBuffer(firstDescriptor’s buffer) is true
             assert!(first_descriptor.buffer.can_transfer_array_buffer(cx));
@@ -568,7 +568,7 @@ impl ReadableByteStreamController {
     /// <https://streams.spec.whatwg.org/#readable-byte-stream-controller-respond-in-closed-state>
     pub(crate) fn respond_in_closed_state(&self, cx: SafeJSContext, can_gc: CanGc) -> Fallible<()> {
         let pending_pull_intos = self.pending_pull_intos.borrow();
-        let first_descriptor = pending_pull_intos.first().unwrap();
+        let first_descriptor = pending_pull_intos.front().unwrap();
 
         // Assert: the remainder after dividing firstDescriptor’s bytes filled
         // by firstDescriptor’s element size is 0.
@@ -624,7 +624,7 @@ impl ReadableByteStreamController {
         can_gc: CanGc,
     ) -> Fallible<()> {
         let pending_pull_intos = self.pending_pull_intos.borrow();
-        let first_descriptor = pending_pull_intos.first().unwrap();
+        let first_descriptor = pending_pull_intos.front().unwrap();
 
         // Assert: pullIntoDescriptor’s bytes filled + bytesWritten ≤ pullIntoDescriptor’s byte length.
         assert!(
@@ -731,7 +731,7 @@ impl ReadableByteStreamController {
             assert!(!view.is_detached_buffer(cx));
 
             // Let firstDescriptor be controller.[[pendingPullIntos]][0].
-            let first_descriptor = pending_pull_intos.first_mut().unwrap();
+            let first_descriptor = pending_pull_intos.front_mut().unwrap();
 
             // Let state be controller.[[stream]].[[state]].
             let stream = self.stream.get().unwrap();
@@ -754,8 +754,8 @@ impl ReadableByteStreamController {
 
             // If firstDescriptor’s byte offset + firstDescriptor’ bytes filled is not view.[[ByteOffset]],
             // throw a RangeError exception.
-            if first_descriptor.byte_offset + first_descriptor.bytes_filled.get() !=
-                (view.get_byte_offset() as u64)
+            if first_descriptor.byte_offset + first_descriptor.bytes_filled.get()
+                != (view.get_byte_offset() as u64)
             {
                 return Err(Error::Range(
                     "firstDescriptor's byte offset + bytes filled is not view byte offset"
@@ -765,8 +765,8 @@ impl ReadableByteStreamController {
 
             // If firstDescriptor’s buffer byte length is not view.[[ViewedArrayBuffer]].[[ByteLength]],
             // throw a RangeError exception.
-            if first_descriptor.buffer_byte_length !=
-                (view.viewed_buffer_array_byte_length(cx) as u64)
+            if first_descriptor.buffer_byte_length
+                != (view.viewed_buffer_array_byte_length(cx) as u64)
             {
                 return Err(Error::Range(
                 "firstDescriptor's buffer byte length is not view viewed buffer array byte length"
@@ -776,8 +776,8 @@ impl ReadableByteStreamController {
 
             // If firstDescriptor’s bytes filled + view.[[ByteLength]] > firstDescriptor’s byte length,
             // throw a RangeError exception.
-            if first_descriptor.bytes_filled.get() + (view.byte_length()) as u64 >
-                first_descriptor.byte_length
+            if first_descriptor.bytes_filled.get() + (view.byte_length()) as u64
+                > first_descriptor.byte_length
             {
                 return Err(Error::Range(
                     "bytes filled + view byte length > byte length".to_owned(),
@@ -826,7 +826,7 @@ impl ReadableByteStreamController {
         let pending_pull_intos = self.pending_pull_intos.borrow();
         if self.byob_request.get().is_none() && !pending_pull_intos.is_empty() {
             // Let firstDescriptor be controller.[[pendingPullIntos]][0].
-            let first_descriptor = pending_pull_intos.first().unwrap();
+            let first_descriptor = pending_pull_intos.front().unwrap();
             // Let view be ! Construct(%Uint8Array%, « firstDescriptor’s buffer,
             // firstDescriptor’s byte offset + firstDescriptor’s bytes filled,
             // firstDescriptor’s byte length − firstDescriptor’s bytes filled »).
@@ -882,12 +882,12 @@ impl ReadableByteStreamController {
         let pending_pull_intos = self.pending_pull_intos.borrow();
         if !pending_pull_intos.is_empty() {
             // Let firstPendingPullInto be controller.[[pendingPullIntos]][0].
-            let first_pending_pull_into = pending_pull_intos.first().unwrap();
+            let first_pending_pull_into = pending_pull_intos.front().unwrap();
 
             // If the remainder after dividing firstPendingPullInto’s bytes filled by
             // firstPendingPullInto’s element size is not 0,
-            if first_pending_pull_into.bytes_filled.get() % first_pending_pull_into.element_size !=
-                0
+            if first_pending_pull_into.bytes_filled.get() % first_pending_pull_into.element_size
+                != 0
             {
                 // needed to drop the borrow and avoid BorrowMutError
                 drop(pending_pull_intos);
@@ -1020,7 +1020,7 @@ impl ReadableByteStreamController {
             let mut pending_pull_intos = self.pending_pull_intos.borrow_mut();
             if !pending_pull_intos.is_empty() {
                 // Let firstPendingPullInto be controller.[[pendingPullIntos]][0].
-                let first_descriptor = pending_pull_intos.first_mut().unwrap();
+                let first_descriptor = pending_pull_intos.front_mut().unwrap();
                 // If ! IsDetachedBuffer(firstPendingPullInto’s buffer) is true, throw a TypeError exception.
                 if first_descriptor.buffer.is_detached_buffer(cx) {
                     return Err(Error::Type("buffer is detached".to_owned()));
@@ -1073,7 +1073,7 @@ impl ReadableByteStreamController {
                 if !pending_pull_intos.is_empty() {
                     // Assert: controller.[[pendingPullIntos]][0]'s reader type is "default".
                     assert!(matches!(
-                        pending_pull_intos.first().unwrap().reader_type,
+                        pending_pull_intos.front().unwrap().reader_type,
                         Some(ReaderType::Default)
                     ));
 
@@ -1242,7 +1242,7 @@ impl ReadableByteStreamController {
             // Let pullIntoDescriptor be controller.[[pendingPullIntos]][0].
             let fill_pull_result = {
                 let pending_pull_intos = self.pending_pull_intos.borrow();
-                let Some(pull_into_descriptor) = pending_pull_intos.first() else {
+                let Some(pull_into_descriptor) = pending_pull_intos.front() else {
                     break;
                 };
                 self.fill_pull_into_descriptor_from_queue(cx, pull_into_descriptor)
@@ -1401,8 +1401,8 @@ impl ReadableByteStreamController {
         {
             let pending_pull_intos = self.pending_pull_intos.borrow();
             assert!(
-                pending_pull_intos.is_empty() ||
-                    pending_pull_intos.first().unwrap() == pull_into_descriptor
+                pending_pull_intos.is_empty()
+                    || pending_pull_intos.front().unwrap() == pull_into_descriptor
             );
         }
 
@@ -1423,7 +1423,7 @@ impl ReadableByteStreamController {
     ) -> Fallible<()> {
         // first_descriptor: &PullIntoDescriptor,
         let pending_pull_intos = self.pending_pull_intos.borrow();
-        let first_descriptor = pending_pull_intos.first().unwrap();
+        let first_descriptor = pending_pull_intos.front().unwrap();
 
         // Assert: pullIntoDescriptor’s reader type is "none".
         assert!(first_descriptor.reader_type.is_none());
@@ -1511,7 +1511,7 @@ impl ReadableByteStreamController {
         // Let descriptor be controller.[[pendingPullIntos]][0].
         // Remove descriptor from controller.[[pendingPullIntos]].
         // Return descriptor.
-        self.pending_pull_intos.borrow_mut().remove(0)
+        self.pending_pull_intos.borrow_mut().pop_front().unwrap()
     }
 
     /// <https://streams.spec.whatwg.org/#abstract-opdef-readablebytestreamcontrollerprocessreadrequestsusingqueue>
@@ -1789,14 +1789,14 @@ impl ReadableByteStreamController {
         let mut pending_pull_intos = self.pending_pull_intos.borrow_mut();
         if !pending_pull_intos.is_empty() {
             // Let firstPendingPullInto be this.[[pendingPullIntos]][0].
-            let mut first_pending_pull_into = pending_pull_intos.remove(0);
+            let mut first_pending_pull_into = pending_pull_intos.pop_front().unwrap();
 
             // Set firstPendingPullInto’s reader type to "none".
             first_pending_pull_into.reader_type = None;
 
             // Set this.[[pendingPullIntos]] to the list « firstPendingPullInto »
             pending_pull_intos.clear();
-            pending_pull_intos.push(first_pending_pull_into);
+            pending_pull_intos.push_back(first_pending_pull_into);
         }
         Ok(())
     }
@@ -1906,7 +1906,7 @@ impl ReadableByteStreamController {
                     // Append pullIntoDescriptor to this.[[pendingPullIntos]].
                     self.pending_pull_intos
                         .borrow_mut()
-                        .push(pull_into_descriptor);
+                        .push_back(pull_into_descriptor);
                 },
                 Err(error) => {
                     // If buffer is an abrupt completion,
