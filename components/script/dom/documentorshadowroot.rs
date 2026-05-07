@@ -207,16 +207,20 @@ impl DocumentOrShadowRoot {
         let nodes = self
             .window
             .elements_from_point_query(LayoutPoint::new(x, y), ElementsFromPointFlags::FindAll);
-        let mut elements: Vec<DomRoot<Element>> = nodes
-            .iter()
-            .flat_map(|result| {
-                // SAFETY: This is safe because `Self::query_elements_from_point` has ensured that
-                // layout has run and any OpaqueNodes that no longer refer to real nodes are gone.
-                let address = UntrustedNodeAddress(result.node.0 as *const c_void);
-                let node = unsafe { node::from_untrusted_node_address(address) };
-                DomRoot::downcast::<Element>(node)
-            })
-            .collect();
+
+        let capacity = nodes.len() + if document_element.is_some() { 1 } else { 0 };
+        // Pre-allocate to avoid collect() overhead, `flat_map` does not give exact size
+        let mut elements: Vec<DomRoot<Element>> = Vec::with_capacity(capacity);
+
+        for result in nodes.iter() {
+            // SAFETY: This is safe because `Self::query_elements_from_point` has ensured that
+            // layout has run and any OpaqueNodes that no longer refer to real nodes are gone.
+            let address = UntrustedNodeAddress(result.node.0 as *const c_void);
+            let node = unsafe { node::from_untrusted_node_address(address) };
+            if let Some(el) = DomRoot::downcast::<Element>(node) {
+                elements.push(el);
+            }
+        }
 
         // Step 4
         if let Some(root_element) = document_element {
@@ -336,8 +340,8 @@ impl DocumentOrShadowRoot {
     ) {
         debug!("Adding named element {:p}: {:p} id={}", self, element, id);
         assert!(
-            element.upcast::<Node>().is_in_a_document_tree() ||
-                element.upcast::<Node>().is_in_a_shadow_tree()
+            element.upcast::<Node>().is_in_a_document_tree()
+                || element.upcast::<Node>().is_in_a_shadow_tree()
         );
         assert!(!id.is_empty());
         let mut id_map = id_map.borrow_mut();

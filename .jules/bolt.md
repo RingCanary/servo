@@ -1,0 +1,3 @@
+## 2025-02-28 - [Avoid flat_map().collect() for Vec initialization when size is known]
+**Learning:** `Vec::from_iter` (via `collect()`) fails to pre-allocate correctly when the iterator is a `FlatMap` or `FilterMap` due to vague size hints, causing unnecessary heap allocations during vector growth.
+**Action:** When mapping over iterators where the maximum or exact output size is known (e.g. mapping DOM elements returned from an OS query), explicitly pre-allocate the target `Vec` using `Vec::with_capacity()` and populate it with a `for` loop, eliminating resizing overhead in hot paths like point queries.
