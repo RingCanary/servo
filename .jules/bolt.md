@@ -1,0 +1,4 @@
+## 2026-05-10 - O(1) Length Retrieval for IFrameCollection\n**Learning:** Iterating over DOM collections that yield ref-counted elements (e.g., `iframes.iter()` mapping to `iframe.element.as_rooted()`) introduces unnecessary O(N) atomic reference-counting and mapping overhead when simply retrieving the count.\n**Action:** Expose underlying data structure sizes via  directly on the collection wrapper (like `IFrameCollection`) to achieve O(1) performance for size checks.
+## 2026-05-10 - O(1) Length Retrieval for IFrameCollection
+**Learning:** Iterating over DOM collections that yield ref-counted elements (e.g., `iframes.iter()` mapping to `iframe.element.as_rooted()`) introduces unnecessary O(N) atomic reference-counting and mapping overhead when simply retrieving the count.
+**Action:** Expose underlying data structure sizes via `.len()` directly on the collection wrapper (like `IFrameCollection`) to achieve O(1) performance for size checks.

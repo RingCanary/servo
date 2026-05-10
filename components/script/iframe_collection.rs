@@ -46,6 +46,17 @@ impl IFrameCollection {
         self.invalid = true;
     }
 
+    /// Returns the number of `<iframe>`s in the collection.
+    /// This is an O(1) operation, compared to `iter().count()` which is O(N).
+    pub(crate) fn len(&self) -> usize {
+        self.iframes.len()
+    }
+
+    /// Returns true if the collection contains no `<iframe>`s.
+    pub(crate) fn is_empty(&self) -> bool {
+        self.iframes.is_empty()
+    }
+
     /// Validate that the collection is up-to-date with the given [`Document`]. If it isn't up-to-date
     /// rebuild it.
     pub(crate) fn validate(&mut self, document: &Document) {
