@@ -1,0 +1,3 @@
+## $(date +%Y-%m-%d) - Optimize SupportedPropertyNames deduplication in HTMLFormElement
+**Learning:** In HTMLFormElement, the `SupportedPropertyNames` method was using an `O(N^2)` linear search across a growing `Vec<DOMString>` alongside allocating an unnecessary `String` to test if an atom is empty. Using a `HashSet<Atom>` and checking `.is_empty()` natively turns this into an `O(N)` loop with no string allocations during the uniqueness check.
+**Action:** When iterating over DOM collections in `components/script` and creating lists of strings, use `std::collections::HashSet` to track seen items (`Atom`s or `&str`) instead of using `Vec::contains` or `iter().any()`, avoiding O(N^2) complexity and deferring `DOMString` allocation.
