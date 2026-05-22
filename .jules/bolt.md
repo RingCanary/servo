@@ -1,0 +1,3 @@
+## 2024-05-22 - [O(1) Deduplication in SupportedPropertyNames]
+**Learning:** In Servo `script` component, `SupportedPropertyNames` (used for named property visibility in JS) iterated over collections and deduplicated items by linearly checking `Vec<DOMString>::contains` or `iter().any()`. This causes an O(N^2) complexity on collections with many named items. Converting `DOMString` over and over just to test equality is slow.
+**Action:** Use a `std::collections::HashSet<Atom>` to track seen item names, as cloning an `Atom` is cheap and hashing it is fast. Only build the heavy `DOMString` wrapper once the item is confirmed to be unique via `seen.insert()`.
