@@ -402,12 +402,16 @@ impl ShadowRootMethods<crate::DomTypeHolder> for ShadowRoot {
     fn ElementsFromPoint(&self, x: Finite<f64>, y: Finite<f64>) -> Vec<DomRoot<Element>> {
         // Return the result of running the retargeting algorithm with context object
         // and the original result as input
-        let mut elements = Vec::new();
-        for e in self
-            .document_or_shadow_root
-            .elements_from_point(x, y, None, self.document.has_browsing_context())
-            .iter()
-        {
+        let initial_elements = self.document_or_shadow_root.elements_from_point(
+            x,
+            y,
+            None,
+            self.document.has_browsing_context(),
+        );
+
+        // O(1) allocation: pre-allocate based on retrieval length.
+        let mut elements = Vec::with_capacity(initial_elements.len());
+        for e in initial_elements.iter() {
             let retargeted_node = e.upcast::<EventTarget>().retarget(self.upcast());
             if let Some(element) = retargeted_node.downcast::<Element>().map(DomRoot::from_ref) {
                 elements.push(element);
