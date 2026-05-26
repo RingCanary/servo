@@ -1,0 +1,3 @@
+## 2026-05-26 - Optimize ElementsFromPoint vectors
+**Learning:** In `components/script/dom`, complex iterators with vague size hints (like `flat_map()` returning an `Option`) fail to automatically pre-allocate memory when using `.collect()`. This causes vectors to dynamically resize and re-allocate continuously when traversing long layout sets during layout calculations.
+**Action:** When working on array mappings or flat mappings on query results inside `script`, hoist the size lookups where possible and explicitly use `Vec::with_capacity()` followed by an explicit loop or `.extend()` to ensure O(1) allocation.
