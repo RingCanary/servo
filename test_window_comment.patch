@@ -1,0 +1,12 @@
+--- components/script/dom/window.rs
++++ components/script/dom/window.rs
+@@ -1614,8 +1614,9 @@
+     }
+
+     /// <https://html.spec.whatwg.org/multipage/#accessing-other-browsing-contexts>
+     fn Length(&self) -> u32 {
++        // Optimization: Use O(1) len() on the underlying Vec instead of O(N) iter().count()
+         self.Document().iframes().len() as u32
+     }
+
+     /// <https://html.spec.whatwg.org/multipage/#dom-parent>
