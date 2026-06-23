@@ -1,0 +1,3 @@
+## 2025-10-30 - Optimize DOM collection property name extraction
+**Learning:** Checking for an empty string via `.to_string().is_empty()` on a DOM Atom type causes an unnecessary heap allocation, while `.is_empty()` can be called directly. Additionally, deduplicating `SupportedPropertyNames` queries using `Vec::contains` results in O(N^2) complexity, and converting to `DOMString` too early adds allocation overhead.
+**Action:** Use `HashSet<Atom>` for O(1) deduplication of IDs and class names, pre-allocate vectors when sizes are known, delay `DOMString::from()` conversion until after uniqueness checks, and use native `.is_empty()` methods to skip string conversions.
