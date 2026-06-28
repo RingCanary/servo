@@ -59,7 +59,7 @@ struct OrderingEntry {
 }
 
 // Per-ordering queues map
-type OrderingQueues = FxHashMap<OrderingIdentifier, Vec<OrderingEntry>>;
+type OrderingQueues = FxHashMap<OrderingIdentifier, std::collections::VecDeque<OrderingEntry>>;
 
 // Active timers map for Run Steps After A Timeout
 type RunStepsActiveMap = FxHashMap<TimerKey, RunStepsDeadline>;
@@ -340,7 +340,7 @@ impl OneshotTimers {
 
         // select timers to run to prevent firing timers
         // that were installed during fire of another timer
-        let mut timers_to_run = Vec::new();
+        let mut timers_to_run = std::collections::VecDeque::new();
 
         loop {
             let mut timers = self.timers.borrow_mut();
@@ -349,7 +349,7 @@ impl OneshotTimers {
                 break;
             }
 
-            timers_to_run.push(timers.pop_back().unwrap());
+            timers_to_run.push_back(timers.pop_back().unwrap());
         }
 
         for timer in timers_to_run {
@@ -369,7 +369,7 @@ impl OneshotTimers {
                         let queues_ref = self.runsteps_queues.borrow();
                         queues_ref
                             .get(ordering_id)
-                            .and_then(|v| v.first().map(|t| t.handle))
+                            .and_then(|v| v.front().map(|t| t.handle))
                     };
                     let is_head = head_handle_opt.is_none_or(|head| head == timer.handle);
 
@@ -410,7 +410,7 @@ impl OneshotTimers {
                         let mut queues_mut = self.runsteps_queues.borrow_mut();
                         if let Some(q) = queues_mut.get_mut(&ordering_id_owned) {
                             if !q.is_empty() {
-                                q.remove(0);
+                                q.pop_front().unwrap();
                             }
                             if q.is_empty() {
                                 queues_mut.remove(&ordering_id_owned);
@@ -834,8 +834,8 @@ impl JsTimerTask {
         //
         // Since we choose proactively prevent execution (see 4.1 above), we must only
         // reschedule repeating timers when they were not canceled as part of step 4.2.
-        if self.is_interval == IsInterval::Interval &&
-            timers.active_timers.borrow().contains_key(&self.handle)
+        if self.is_interval == IsInterval::Interval
+            && timers.active_timers.borrow().contains_key(&self.handle)
         {
             timers.initialize_and_schedule(&this.global(), self);
         }
