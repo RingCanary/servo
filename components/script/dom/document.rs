@@ -492,8 +492,9 @@ pub(crate) struct Document {
     /// Number of outstanding requests to prevent JS or layout from running.
     script_and_layout_blockers: Cell<u32>,
     /// List of tasks to execute as soon as last script/layout blocker is removed.
+    /// Optimized to use VecDeque for O(1) pop_front operations instead of O(N) Vec shift.
     #[ignore_malloc_size_of = "Measuring trait objects is hard"]
-    delayed_tasks: DomRefCell<Vec<Box<dyn NonSendTaskBox>>>,
+    delayed_tasks: DomRefCell<std::collections::VecDeque<Box<dyn NonSendTaskBox>>>,
     /// <https://html.spec.whatwg.org/multipage/#completely-loaded>
     completely_loaded: Cell<bool>,
     /// Set of shadow roots connected to the document tree.
@@ -2118,8 +2119,8 @@ impl Document {
         // to fire an event named hashchange at document's relevant global object, using HashChangeEvent,
         // with the oldURL attribute initialized to the serialization of oldURL
         // and the newURL attribute initialized to the serialization of entry's URL.
-        if old_url.as_url()[Position::BeforeFragment..] !=
-            new_url.as_url()[Position::BeforeFragment..]
+        if old_url.as_url()[Position::BeforeFragment..]
+            != new_url.as_url()[Position::BeforeFragment..]
         {
             let window = Trusted::new(self.owner_window().deref());
             let old_url = old_url.to_string();
@@ -3066,9 +3067,9 @@ impl Document {
         if !self.is_fully_active() {
             return false;
         }
-        if !self.window().layout_blocked() &&
-            (!self.restyle_reason().is_empty() ||
-                self.window().layout().needs_new_display_list())
+        if !self.window().layout_blocked()
+            && (!self.restyle_reason().is_empty()
+                || self.window().layout().needs_new_display_list())
         {
             return true;
         }
@@ -3439,8 +3440,8 @@ impl Document {
     ) {
         let metrics = self.interactive_time.borrow();
         match metric_type {
-            ProgressiveWebMetricType::FirstPaint |
-            ProgressiveWebMetricType::FirstContentfulPaint => {
+            ProgressiveWebMetricType::FirstPaint
+            | ProgressiveWebMetricType::FirstContentfulPaint => {
                 let binding = PerformancePaintTiming::new(
                     self.window.as_global_scope(),
                     metric_type,
@@ -3536,8 +3537,8 @@ impl Document {
             _ => {
                 // Step 9.1: If document's unload counter is greater than 0 or
                 // document's ignore-destructive-writes counter is greater than 0, then return.
-                if self.is_prompting_or_unloading() ||
-                    self.ignore_destructive_writes_counter.get() > 0
+                if self.is_prompting_or_unloading()
+                    || self.ignore_destructive_writes_counter.get() > 0
                 {
                     return Ok(());
                 }
@@ -3891,8 +3892,8 @@ impl Document {
     pub(crate) fn insecure_requests_policy(&self) -> InsecureRequestsPolicy {
         if let Some(csp_list) = self.get_csp_list() {
             for policy in &csp_list.0 {
-                if policy.contains_a_directive_whose_name_is("upgrade-insecure-requests") &&
-                    policy.disposition == PolicyDisposition::Enforce
+                if policy.contains_a_directive_whose_name_is("upgrade-insecure-requests")
+                    && policy.disposition == PolicyDisposition::Enforce
                 {
                     return InsecureRequestsPolicy::Upgrade;
                 }
@@ -3954,7 +3955,7 @@ impl Document {
             .set(self.script_and_layout_blockers.get() - 1);
         while self.script_and_layout_blockers.get() == 0 && !self.delayed_tasks.borrow().is_empty()
         {
-            let task = self.delayed_tasks.borrow_mut().remove(0);
+            let task = self.delayed_tasks.borrow_mut().pop_front().unwrap();
             let mut cx = unsafe { script_bindings::script_runtime::temp_cx() };
             task.run_box(&mut cx);
         }
@@ -3962,7 +3963,7 @@ impl Document {
 
     /// Enqueue a task to run as soon as any JS and layout blockers are removed.
     pub(crate) fn add_delayed_task<T: 'static + NonSendTaskBox>(&self, task: T) {
-        self.delayed_tasks.borrow_mut().push(Box::new(task));
+        self.delayed_tasks.borrow_mut().push_back(Box::new(task));
     }
 
     /// Assert that the DOM is in a state that will allow running content JS or
@@ -4866,8 +4867,8 @@ impl Document {
     }
 
     pub(crate) fn has_trustworthy_ancestor_or_current_origin(&self) -> bool {
-        self.has_trustworthy_ancestor_origin.get() ||
-            self.origin().immutable().is_potentially_trustworthy()
+        self.has_trustworthy_ancestor_origin.get()
+            || self.origin().immutable().is_potentially_trustworthy()
     }
 
     pub(crate) fn highlight_dom_node(&self, node: Option<&Node>) {
@@ -5698,8 +5699,8 @@ impl DocumentMethods<crate::DomTypeHolder> for Document {
 
         let node = new_body.upcast::<Node>();
         match node.type_id() {
-            NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLBodyElement)) |
-            NodeTypeId::Element(ElementTypeId::HTMLElement(
+            NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLBodyElement))
+            | NodeTypeId::Element(ElementTypeId::HTMLElement(
                 HTMLElementTypeId::HTMLFrameSetElement,
             )) => {},
             _ => return Err(Error::HierarchyRequest(None)),
@@ -5772,8 +5773,8 @@ impl DocumentMethods<crate::DomTypeHolder> for Document {
                 &self.window,
                 self.upcast(),
                 |element, _| {
-                    (element.is::<HTMLAnchorElement>() || element.is::<HTMLAreaElement>()) &&
-                        element.has_attribute(&local_name!("href"))
+                    (element.is::<HTMLAnchorElement>() || element.is::<HTMLAreaElement>())
+                        && element.has_attribute(&local_name!("href"))
                 },
                 can_gc,
             )
@@ -6021,8 +6022,8 @@ impl DocumentMethods<crate::DomTypeHolder> for Document {
                         elem.get_name().as_ref() == Some(&self.name)
                     },
                     HTMLElementTypeId::HTMLImageElement => elem.get_name().is_some_and(|name| {
-                        name == *self.name ||
-                            !name.is_empty() && elem.get_id().as_ref() == Some(&self.name)
+                        name == *self.name
+                            || !name.is_empty() && elem.get_id().as_ref() == Some(&self.name)
                     }),
                     // TODO handle <embed> and <object>; these depend on whether the element is
                     // “exposed”, a concept that doesn’t fully make sense until embed/object
@@ -6630,9 +6631,9 @@ fn is_named_element_with_name_attribute(elem: &Element) -> bool {
         _ => return false,
     };
     match type_ {
-        HTMLElementTypeId::HTMLFormElement |
-        HTMLElementTypeId::HTMLIFrameElement |
-        HTMLElementTypeId::HTMLImageElement => true,
+        HTMLElementTypeId::HTMLFormElement
+        | HTMLElementTypeId::HTMLIFrameElement
+        | HTMLElementTypeId::HTMLImageElement => true,
         // TODO handle <embed> and <object>; these depend on whether the element is
         // “exposed”, a concept that doesn’t fully make sense until embed/object
         // behaviour is actually implemented

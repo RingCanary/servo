@@ -59,7 +59,8 @@ struct OrderingEntry {
 }
 
 // Per-ordering queues map
-type OrderingQueues = FxHashMap<OrderingIdentifier, Vec<OrderingEntry>>;
+// Optimized to use VecDeque for O(1) pop_front operations instead of O(N) Vec shift.
+type OrderingQueues = FxHashMap<OrderingIdentifier, std::collections::VecDeque<OrderingEntry>>;
 
 // Active timers map for Run Steps After A Timeout
 type RunStepsActiveMap = FxHashMap<TimerKey, RunStepsDeadline>;
@@ -410,7 +411,7 @@ impl OneshotTimers {
                         let mut queues_mut = self.runsteps_queues.borrow_mut();
                         if let Some(q) = queues_mut.get_mut(&ordering_id_owned) {
                             if !q.is_empty() {
-                                q.remove(0);
+                                q.pop_front();
                             }
                             if q.is_empty() {
                                 queues_mut.remove(&ordering_id_owned);
@@ -834,8 +835,8 @@ impl JsTimerTask {
         //
         // Since we choose proactively prevent execution (see 4.1 above), we must only
         // reschedule repeating timers when they were not canceled as part of step 4.2.
-        if self.is_interval == IsInterval::Interval &&
-            timers.active_timers.borrow().contains_key(&self.handle)
+        if self.is_interval == IsInterval::Interval
+            && timers.active_timers.borrow().contains_key(&self.handle)
         {
             timers.initialize_and_schedule(&this.global(), self);
         }
