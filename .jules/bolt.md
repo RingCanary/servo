@@ -1,0 +1,3 @@
+## 2025-02-20 - HTMLFormElement SupportedPropertyNames Deduplication Optimization
+**Learning:** The `SupportedPropertyNames` method in `HTMLFormElement` previously converted interned `Atom` strings to regular strings just to check if they were empty (`!sn.name.to_string().is_empty()`), which incurs unnecessary heap allocations. Furthermore, it used an O(N^2) linear scan over a vector to deduplicate names (`!names_vec.iter().any(|name| *name == *elem.name)`).
+**Action:** When filtering or deduplicating elements by `Atom` properties, use the native `.is_empty()` method directly to avoid string allocations. For deduplication, use a `HashSet` with pre-allocated capacity (`HashSet::with_capacity`) to achieve O(N) performance without reallocation overhead during insertion.
