@@ -164,6 +164,11 @@ impl IFrameCollection {
         }
     }
 
+    // O(1) length check for the underlying vector, bypassing ref-counting overhead.
+    pub(crate) fn len(&self) -> usize {
+        self.iframes.len()
+    }
+
     pub(crate) fn iter(&self) -> impl Iterator<Item = DomRoot<HTMLIFrameElement>> + use<'_> {
         self.iframes.iter().map(|iframe| iframe.element.as_rooted())
     }
